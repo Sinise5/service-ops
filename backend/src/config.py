@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     port: int = 8080
 
     # Database
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/serviceops_dev"
+    database_url: str = "postgresql://postgres:***@localhost:5432/serviceops_dev"
 
     # Redis
     redis_url: str = "redis://localhost:6379"
