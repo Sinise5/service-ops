@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+*.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Project
+node_modules/
+frontend/dist/
+frontend/build/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/alembic/__pycache__/
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-data/
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# OS Temp
+*.tmp
+*.temp
+
+# Backup
+*.bak
+*.backup
+*~
+
+# IDE workspace
+.vscode/settings.json
+.idea/workspace.xml
