@@ -10,10 +10,10 @@ class UserRepository:
         hashed = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt())
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                """INSERT INTO users (email, name, password_hash)
-                   VALUES (%s, %s, %s)
-                   RETURNING id, email, name, is_active, created_at""",
-                (user.email, user.email, hashed.decode())
+                """INSERT INTO users (email, username, first_name, last_name, hashed_password)
+                   VALUES (%s, %s, %s, %s, %s)
+                   RETURNING id, email, username, first_name, last_name, status, created_at""",
+                (user.email, user.email.split('@')[0], '', '', hashed.decode())
             )
             row = await cursor.fetchone()
             return dict(row)
@@ -22,7 +22,7 @@ class UserRepository:
         """Get user by email"""
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                "SELECT id, email, name, password_hash, is_active, created_at FROM users WHERE email = %s",
+                "SELECT id, email, username, first_name, last_name, hashed_password, status, created_at FROM users WHERE email = %s",
                 (email,)
             )
             row = await cursor.fetchone()
@@ -32,7 +32,7 @@ class UserRepository:
         """Get user by ID"""
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                "SELECT id, email, name, is_active, created_at FROM users WHERE id = %s",
+                "SELECT id, email, username, first_name, last_name, status, created_at FROM users WHERE id = %s",
                 (str(user_id),)
             )
             row = await cursor.fetchone()
@@ -43,9 +43,13 @@ class UserRepository:
         updates = []
         values = []
         
-        if 'name' in data:
-            updates.append("name = %s")
-            values.append(data['name'])
+        if 'first_name' in data:
+            updates.append("first_name = %s")
+            values.append(data['first_name'])
+        
+        if 'last_name' in data:
+            updates.append("last_name = %s")
+            values.append(data['last_name'])
         
         if not updates:
             return

@@ -28,7 +28,7 @@ class AuthService:
             raise Exception("Invalid credentials")
         
         # password_hash from DB is stored as string, encode it
-        hash_bytes = user['password_hash']
+        hash_bytes = user['hashed_password']
         print(f"[AUTH SERVICE] Hash type: {type(hash_bytes)}, length: {len(hash_bytes) if hash_bytes else 0}", file=sys.stderr, flush=True)
         
         if isinstance(hash_bytes, str):
