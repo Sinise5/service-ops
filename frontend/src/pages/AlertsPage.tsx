@@ -9,6 +9,7 @@ export default function AlertsPage() {
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal("")
   const [showForm, setShowForm] = createSignal(false)
+  const [editingId, setEditingId] = createSignal<string | null>(null)
   
   // Filter state
   const [selectedSeverity, setSelectedSeverity] = createSignal<string>("")
@@ -85,14 +86,31 @@ export default function AlertsPage() {
   })
 
   const handleUpdate = async (rule: any) => {
-    const newName = prompt("New rule name:", rule.name)
-    if (!newName) return
+    setFormData(rule)
+    setEditingId(rule.id)
+    setShowForm(true)
+  }
+
+  const handleSubmit = async (e: Event) => {
+    e.preventDefault()
+    const fd = formData()
+    if (!fd.name) {
+      setError("Alert name required")
+      return
+    }
+    setError("")
     try {
-      await api.put(`/alerts/rules/${rule.id}`, { name: newName })
+      if (editingId()) {
+        await api.put(`/alerts/rules/${editingId()}`, fd)
+        setEditingId(null)
+      } else {
+        await api.post("/alerts/rules", fd)
+      }
+      setShowForm(false)
       const updated = await api.get<any[]>("/alerts/rules")
       setAlerts(updated || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update alert rule")
+      setError(err instanceof Error ? err.message : "Failed to save alert rule")
     }
   }
 
@@ -107,31 +125,19 @@ export default function AlertsPage() {
     }
   }
 
-  const handleCreate = async (e: Event) => {
-    e.preventDefault()
-    const fd = formData()
-    if (!fd.name) {
-      setError("Alert name required")
-      return
-    }
-    setError("")
-    try {
-      await api.post("/alerts/rules", fd)
-      setShowForm(false)
-      const updated = await api.get<any[]>("/alerts/rules")
-      setAlerts(updated || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create alert rule")
-    }
-  }
-
   return (
     <Layout>
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <h1 class="text-3xl font-bold text-white">Alert Rules</h1>
           <button
-            onClick={() => setShowForm(!showForm())}
+            onClick={() => {
+              setShowForm(!showForm())
+              if (showForm()) {
+                setEditingId(null)
+                setFormData({ name: "", check_id: "", condition: "threshold_exceeded", threshold: 80, conditions: [], logic: "AND", severity: "warning", enabled: true })
+              }
+            }}
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
           >
             {showForm() ? "Cancel" : "+ Add Alert Rule"}
@@ -180,7 +186,8 @@ export default function AlertsPage() {
         </div>
 
         <Show when={showForm()}>
-          <form onSubmit={handleCreate} class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+          <form onSubmit={handleSubmit} class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h2 class="text-xl font-semibold text-white mb-4">{editingId() ? "Edit Alert Rule" : "Create Alert Rule"}</h2>
             <input
               type="text"
               placeholder="Alert Name"
@@ -264,7 +271,7 @@ export default function AlertsPage() {
               type="submit"
               class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
             >
-              Create Alert Rule
+              {editingId() ? "Update Alert Rule" : "Create Alert Rule"}
             </button>
           </form>
         </Show>
