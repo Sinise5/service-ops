@@ -48,7 +48,7 @@ docker-data/
 
 # Logs
 *.log
-logs/
+/logs/
 
 # OS Temp
 *.tmp
