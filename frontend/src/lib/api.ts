@@ -1,6 +1,6 @@
 // API base URL configuration
-// Use empty string to go through Vite proxy (relative paths)
-export const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+// Use /api prefix to go through nginx proxy to backend
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 // Auth token helpers
 export function getAuthToken(): string | null {

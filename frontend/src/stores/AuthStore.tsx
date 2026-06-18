@@ -25,7 +25,7 @@ export function AuthProvider(props: ParentProps) {
   const isAuthenticated = () => !!token()
 
   const login = async (email: string, password: string) => {
-    const res = await fetch("/auth/login", {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -36,7 +36,7 @@ export function AuthProvider(props: ParentProps) {
     setToken(t)
     localStorage.setItem("auth_token", t)
     try {
-      const me = await fetch("/auth/me", { headers: { Authorization: `Bearer ${t}` } })
+      const me = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${t}` } })
       if (me.ok) setUser(await me.json())
     } catch { setUser({ id: "0", email, username: email }) }
   }
@@ -51,7 +51,7 @@ export function AuthProvider(props: ParentProps) {
   createEffect(() => {
     const stored = token()
     if (stored && !user()) {
-      fetch("/auth/me", { headers: { Authorization: `Bearer ${stored}` } })
+      fetch("/api/auth/me", { headers: { Authorization: `Bearer ${stored}` } })
         .then(r => r.ok ? r.json() : null)
         .then(u => u && setUser(u))
         .catch(() => {})
