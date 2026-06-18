@@ -4,9 +4,26 @@ import Layout from "../components/Layout"
 
 export default function HelpPage() {
   const [expandedSection, setExpandedSection] = createSignal<string | null>(null)
+  const [selectedGuide, setSelectedGuide] = createSignal<string | null>(null)
+  const [guideContent, setGuideContent] = createSignal<string>("")
+  const [loadingGuide, setLoadingGuide] = createSignal(false)
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection() === section ? null : section)
+  }
+
+  const openGuide = async (filename: string) => {
+    setLoadingGuide(true)
+    try {
+      const response = await fetch(`/${filename}`)
+      const text = await response.text()
+      setGuideContent(text)
+      setSelectedGuide(filename)
+    } catch (err) {
+      setGuideContent(`Error loading ${filename}`)
+      setSelectedGuide(filename)
+    }
+    setLoadingGuide(false)
   }
 
   const sections = [
@@ -70,19 +87,18 @@ export default function HelpPage() {
       content: [
         {
           heading: "Getting Started",
-          text: "New to ServiceOps? Start with INTEGRATION_GUIDE.md — complete step-by-step setup from assets to Telegram notifications."
+          text: "New to ServiceOps? Start with complete step-by-step setup from assets to Telegram notifications.",
+          link: "INTEGRATION_GUIDE.md"
         },
         {
           heading: "Monitoring Guide",
-          text: "MONITORING_GUIDE.md: Asset management, HTTP/Ping/SSL/TCP checks, common mistakes, troubleshooting 10s timeout issues, best practices."
+          text: "Asset management, HTTP/Ping/SSL/TCP checks, common mistakes, troubleshooting 10s timeout issues, best practices.",
+          link: "MONITORING_GUIDE.md"
         },
         {
           heading: "Alert Rules Guide",
-          text: "ALERT_RULES_GUIDE.md: Single-condition vs multi-condition rules, flexible operators (>, <, ==, !=), AND/OR logic, examples, API reference."
-        },
-        {
-          heading: "All Guides",
-          text: "INTEGRATION_GUIDE.md — End-to-end setup\nMONITORING_GUIDE.md — Monitoring setup\nALERT_RULES_GUIDE.md — Alert rules reference"
+          text: "Single-condition vs multi-condition rules, flexible operators (>, <, ==, !=), AND/OR logic, examples, API reference.",
+          link: "ALERT_RULES_GUIDE.md"
         }
       ]
     },
@@ -291,6 +307,12 @@ export default function HelpPage() {
                         </p>
                       </Show>
 
+                      <Show when={item.link}>
+                        <button onClick={() => openGuide(item.link)} class="text-blue-600 hover:text-blue-700 hover:underline font-semibold text-sm">
+                          View {item.link} →
+                        </button>
+                      </Show>
+
                       <Show when={item.steps}>
                         <ol class="list-decimal list-inside space-y-2">
                           {item.steps.map((step, sIdx) => (
@@ -317,6 +339,30 @@ export default function HelpPage() {
             </a>
           </div>
         </div>
+
+        {/* Guide Modal Viewer */}
+        <Show when={selectedGuide()}>
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedGuide(null)}>
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-900">{selectedGuide()}</h2>
+                <button onClick={() => setSelectedGuide(null)} class="text-slate-500 hover:text-slate-700">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div class="px-6 py-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+                <Show when={loadingGuide()}>
+                  <div class="text-center py-8 text-slate-500">Loading...</div>
+                </Show>
+                <Show when={!loadingGuide()}>
+                  <pre class="whitespace-pre-wrap text-sm text-slate-700 font-mono leading-relaxed">{guideContent()}</pre>
+                </Show>
+              </div>
+            </div>
+          </div>
+        </Show>
       </div>
     </Layout>
   )
