@@ -101,6 +101,15 @@ async def toggle_alert_rule(request: Request):
         return json_response({"error": str(e)}, 400)
 
 
+async def delete_alert_rule(request: Request):
+    try:
+        rule_id = request.path_params.get("rule_id")
+        await rule_repo.delete(rule_id)
+        return json_response({"success": True, "message": "Rule deleted"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
 async def list_incidents(request: Request):
     try:
         status = request.query_params.get("status", None)
@@ -113,7 +122,16 @@ async def list_incidents(request: Request):
 async def acknowledge_incident(request: Request):
     try:
         incident_id = request.path_params.get("incident_id")
-        user_id = get_header(request, "X-User-ID", "unknown")
+        
+        # Extract user_id from JWT token
+        auth_header = get_header(request, "Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return json_response({"error": "Unauthorized"}, 401)
+        
+        token = auth_header[7:]
+        from ..auth.service import auth_service
+        user_id = auth_service.verify_token(token)
+        
         await incident_repo.acknowledge(incident_id, user_id)
         return json_response({"message": "Acknowledged"}, 200)
     except Exception as e:
