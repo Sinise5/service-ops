@@ -27,8 +27,8 @@ class AuthService:
             print(f"[AUTH SERVICE] User not found: {email}", file=sys.stderr, flush=True)
             raise Exception("Invalid credentials")
         
-        # hashed_password from DB is already bytes, don't encode
-        hash_bytes = user['hashed_password']
+        # password_hash from DB is stored as string, encode it
+        hash_bytes = user['password_hash']
         print(f"[AUTH SERVICE] Hash type: {type(hash_bytes)}, length: {len(hash_bytes) if hash_bytes else 0}", file=sys.stderr, flush=True)
         
         if isinstance(hash_bytes, str):

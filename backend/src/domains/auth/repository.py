@@ -10,10 +10,10 @@ class UserRepository:
         hashed = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt())
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                """INSERT INTO users (email, username, hashed_password, first_name, last_name)
-                   VALUES (%s, %s, %s, %s, %s)
-                   RETURNING id, email, username, first_name, last_name, status, created_at""",
-                (user.email, user.username, hashed.decode(), user.first_name, user.last_name)
+                """INSERT INTO users (email, name, password_hash)
+                   VALUES (%s, %s, %s)
+                   RETURNING id, email, name, is_active, created_at""",
+                (user.email, user.email, hashed.decode())
             )
             row = await cursor.fetchone()
             return dict(row)
@@ -22,7 +22,7 @@ class UserRepository:
         """Get user by email"""
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                "SELECT * FROM users WHERE email = %s",
+                "SELECT id, email, name, password_hash, is_active, created_at FROM users WHERE email = %s",
                 (email,)
             )
             row = await cursor.fetchone()
@@ -32,7 +32,7 @@ class UserRepository:
         """Get user by ID"""
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                "SELECT id, email, username, first_name, last_name, status, created_at FROM users WHERE id = %s",
+                "SELECT id, email, name, is_active, created_at FROM users WHERE id = %s",
                 (str(user_id),)
             )
             row = await cursor.fetchone()
@@ -43,10 +43,9 @@ class UserRepository:
         updates = []
         values = []
         
-        for key in ['first_name', 'last_name', 'username']:
-            if key in data:
-                updates.append(f"{key} = %s")
-                values.append(data[key])
+        if 'name' in data:
+            updates.append("name = %s")
+            values.append(data['name'])
         
         if not updates:
             return
