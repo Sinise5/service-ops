@@ -109,7 +109,7 @@ class MonitoringScheduler:
             
             if condition == "check_failed" and result.status == "failed":
                 should_trigger = True
-            elif condition == "threshold_exceeded" and threshold and result.response_time and result.response_time > threshold:
+            elif condition == "threshold_exceeded" and threshold and result.response_time_ms and result.response_time_ms > threshold:
                 should_trigger = True
             
             if should_trigger:
