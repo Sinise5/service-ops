@@ -112,6 +112,23 @@ export default function MonitoringPage() {
     }
   }
 
+  const [execResult, setExecResult] = createSignal<any>(null)
+  const [execLoading, setExecLoading] = createSignal(false)
+
+  const handleExecute = async (checkId: string) => {
+    setExecLoading(true)
+    setExecResult(null)
+    try {
+      const result = await api.post(`/monitoring/checks/${checkId}/execute`, {})
+      setExecResult(result)
+      setTimeout(() => setExecResult(null), 5000) // Auto hide after 5s
+    } catch (err) {
+      setExecResult({ error: err instanceof Error ? err.message : "Execute failed" })
+    } finally {
+      setExecLoading(false)
+    }
+  }
+
   return (
     <Layout>
       <div class="space-y-6">
@@ -295,6 +312,13 @@ export default function MonitoringPage() {
                         </td>
                         <td class="px-6 py-4 text-sm text-right space-x-2">
                           <button
+                            onClick={() => handleExecute(check.id)}
+                            disabled={execLoading()}
+                            class="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+                          >
+                            {execLoading() ? "Running..." : "Execute Now"}
+                          </button>
+                          <button
                             onClick={() => handleUpdate(check)}
                             class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
                           >
@@ -316,6 +340,21 @@ export default function MonitoringPage() {
           </Show>
         </div>
       </div>
+
+      <Show when={execResult()}>
+        <div class={`fixed bottom-4 right-4 p-4 rounded-lg text-white ${
+          execResult()?.error ? 'bg-red-600' : 'bg-green-600'
+        }`}>
+          {execResult()?.error ? (
+            <div>❌ {execResult().error}</div>
+          ) : (
+            <div>
+              ✅ Status: {execResult()?.status}<br/>
+              Response: {execResult()?.response_time_ms}ms
+            </div>
+          )}
+        </div>
+      </Show>
     </Layout>
   )
 }
