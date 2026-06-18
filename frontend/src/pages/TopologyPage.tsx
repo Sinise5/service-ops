@@ -1,5 +1,5 @@
 import { createSignal, onMount, For, Show } from 'solid-js'
-import { Network, AlertCircle, TrendingUp } from 'lucide-solid'
+import { Network, AlertCircle, TrendingUp, GitBranch } from 'lucide-solid'
 import { api } from '../lib/api'
 
 interface Asset {
