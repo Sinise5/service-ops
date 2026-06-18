@@ -151,6 +151,26 @@ async def get_me(request: Request):
     except Exception as e:
         return cors_response({"error": str(e)}, status_code=401)
 
+@app.put("/auth/me")
+async def update_me(request: Request):
+    auth_header = get_header(request, "Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return cors_response({"error": "Unauthorized"}, status_code=401)
+    try:
+        from uuid import UUID
+        token = auth_header[7:]
+        user_id = auth_service.verify_token(token)
+        body = json.loads(request.body)
+        await auth_service.user_repo.update(UUID(str(user_id)), body)
+        user = await auth_service.user_repo.get_by_id(UUID(str(user_id)))
+        if user:
+            for k, v in user.items():
+                if hasattr(v, 'isoformat'):
+                    user[k] = v.isoformat()
+        return cors_response(user)
+    except Exception as e:
+        return cors_response({"error": str(e)}, status_code=400)
+
 # ============= ASSET ROUTES =============
 @app.post("/assets")
 async def create_asset(request: Request):
@@ -210,6 +230,14 @@ async def create_check(request: Request):
     except Exception as e:
         return Response(status_code=400, body=json.dumps({"error": str(e)}))
 
+@app.get("/monitoring/checks")
+async def list_all_checks(request: Request):
+    try:
+        checks = await check_repo.list_all()
+        return cors_response(checks, 200)
+    except Exception as e:
+        return cors_response({"error": str(e)}, 400)
+
 @app.get("/monitoring/checks/asset/:asset_id")
 async def list_checks_by_asset(request: Request):
     try:
@@ -251,6 +279,11 @@ async def toggle_rule(request: Request):
 
 @app.get("/alerts/incidents")
 async def list_alert_incidents(request: Request):
+    return await list_incidents(request)
+
+@app.get("/incidents")
+async def list_incidents_alias(request: Request):
+    """Alias for /alerts/incidents for frontend compatibility"""
     return await list_incidents(request)
 
 @app.post("/alerts/incidents/:incident_id/acknowledge")
