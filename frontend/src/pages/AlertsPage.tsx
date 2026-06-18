@@ -86,7 +86,16 @@ export default function AlertsPage() {
   })
 
   const handleUpdate = async (rule: any) => {
-    setFormData(rule)
+    setFormData({
+      name: rule.name || "",
+      check_id: rule.check_id || "",
+      condition: rule.condition || "threshold_exceeded",
+      threshold: rule.threshold || 80,
+      conditions: Array.isArray(rule.conditions) ? rule.conditions : (rule.conditions ? JSON.parse(rule.conditions) : []),
+      logic: rule.logic || "AND",
+      severity: rule.severity || "warning",
+      enabled: rule.enabled !== undefined ? rule.enabled : true
+    })
     setEditingId(rule.id)
     setShowForm(true)
   }
