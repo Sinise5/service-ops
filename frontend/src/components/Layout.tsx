@@ -50,6 +50,9 @@ export default function Layout(props: ParentProps) {
               <A href="/logs" class="text-slate-300 hover:text-blue-400 transition-colors">
                 Logs
               </A>
+              <A href="/help" class="text-slate-300 hover:text-blue-400 transition-colors">
+                📚 Help
+              </A>
               <A href="/settings" class="text-slate-300 hover:text-blue-400 transition-colors">
                 Settings
               </A>
