@@ -49,6 +49,29 @@ export default function AlertsPage() {
     enabled: true
   })
 
+  const addCondition = () => {
+    setFormData({
+      ...formData(),
+      conditions: [...formData().conditions, { field: "response_time_ms", operator: ">", value: 1000 }]
+    })
+  }
+
+  const removeCondition = (idx: number) => {
+    const c = [...formData().conditions]
+    c.splice(idx, 1)
+    setFormData({ ...formData(), conditions: c })
+  }
+
+  const updateCondition = (idx: number, field: string, value: any) => {
+    const c = [...formData().conditions]
+    c[idx] = { ...c[idx], [field]: value }
+    setFormData({ ...formData(), conditions: c })
+  }
+
+  const toggleLogic = () => {
+    setFormData({ ...formData(), logic: formData().logic === "AND" ? "OR" : "AND" })
+  }
+
   onMount(async () => {
     try {
       const data = await api.get<any[]>("/alerts/rules")
@@ -191,6 +214,52 @@ export default function AlertsPage() {
               <option value="warning">Warning</option>
               <option value="critical">Critical</option>
             </select>
+
+            {/* Advanced Conditions Builder */}
+            <div class="border border-slate-700 rounded p-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-slate-300">Conditions</span>
+                <div class="flex items-center gap-2">
+                  <button type="button" onClick={toggleLogic}
+                    class={`px-3 py-1 rounded text-xs font-medium transition-colors ${formData().logic === "AND" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300"}`}>
+                    AND
+                  </button>
+                  <span class="text-slate-500 text-xs">or</span>
+                  <button type="button" onClick={toggleLogic}
+                    class={`px-3 py-1 rounded text-xs font-medium transition-colors ${formData().logic === "OR" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300"}`}>
+                    OR
+                  </button>
+                  <button type="button" onClick={addCondition}
+                    class="px-2 py-1 bg-green-700 hover:bg-green-600 text-white rounded text-xs">+ Add</button>
+                </div>
+              </div>
+              <Show when={formData().conditions.length === 0}>
+                <div class="text-slate-500 text-xs py-2">No custom conditions. Using single condition mode.</div>
+              </Show>
+              <For each={formData().conditions}>
+                {(cond: any, idx: any) => (
+                  <div class="flex items-center gap-2 py-1">
+                    <select value={cond.field} onChange={(e) => updateCondition(idx(), "field", e.currentTarget.value)}
+                      class="flex-1 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-white text-xs">
+                      <option value="response_time_ms">Response Time</option>
+                      <option value="status">Status</option>
+                      <option value="output">Output</option>
+                    </select>
+                    <select value={cond.operator} onChange={(e) => updateCondition(idx(), "operator", e.currentTarget.value)}
+                      class="w-16 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-white text-xs">
+                      <option value=">">&gt;</option><option value="<">&lt;</option>
+                      <option value="==">==</option><option value="!=">!=</option>
+                    </select>
+                    <input type={cond.field === "status" ? "text" : "number"} value={cond.value}
+                      onInput={(e) => updateCondition(idx(), "value", cond.field === "status" ? e.currentTarget.value : Number(e.currentTarget.value))}
+                      class="w-20 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-white text-xs" />
+                    <button type="button" onClick={() => removeCondition(idx())}
+                      class="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded text-xs">✕</button>
+                  </div>
+                )}
+              </For>
+            </div>
+
             <button
               type="submit"
               class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
