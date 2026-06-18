@@ -135,6 +135,19 @@ export default function MonitoringPage() {
     }
   }
 
+  const [logs, setLogs] = createSignal<any[]>([])
+  const [showLogs, setShowLogs] = createSignal(false)
+
+  const handleViewLogs = async (checkId: string) => {
+    try {
+      const data = await api.get<any[]>(`/monitoring/results/${checkId}`)
+      setLogs(Array.isArray(data) ? data : [])
+      setShowLogs(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load logs")
+    }
+  }
+
   return (
     <Layout>
       <div class="space-y-6">
@@ -321,6 +334,12 @@ export default function MonitoringPage() {
                           </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-right space-x-2">
+                          <button
+                            onClick={() => handleViewLogs(check.id)}
+                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
+                          >
+                            Logs
+                          </button>
                           <button
                             onClick={() => handleExecute(check.id)}
                             disabled={execLoading()}
