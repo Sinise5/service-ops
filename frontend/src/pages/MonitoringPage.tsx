@@ -291,6 +291,7 @@ export default function MonitoringPage() {
                   <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Target</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Interval</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
@@ -308,6 +309,9 @@ export default function MonitoringPage() {
                       <tr class="hover:bg-slate-800/50">
                         <td class="px-6 py-4 text-sm text-white">{check.name}</td>
                         <td class="px-6 py-4 text-sm text-slate-300">{check.check_type}</td>
+                        <td class="px-6 py-4 text-sm text-slate-400 truncate max-w-xs">
+                          {check.config?.url || check.config?.host || '-'}
+                        </td>
                         <td class="px-6 py-4 text-sm text-slate-300">{check.interval_seconds}s</td>
                         <td class="px-6 py-4 text-sm">
                           <span class={`px-2 py-1 rounded text-xs font-medium ${
