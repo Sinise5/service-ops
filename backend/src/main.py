@@ -46,6 +46,25 @@ async def health(request: Request):
 async def root(request: Request):
     return {"message": "ServiceOps API v0.1.0"}
 
+@app.get("/me")
+async def current_user(request: Request):
+    """Alias for /auth/me"""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return cors_response({"error": "Unauthorized"}, status_code=401)
+    try:
+        from uuid import UUID
+        token = auth_header[7:]
+        user_id = auth_service.verify_token(token)
+        user = await auth_service.user_repo.get_by_id(UUID(str(user_id)))
+        if user:
+            for k, v in user.items():
+                if hasattr(v, 'isoformat'):
+                    user[k] = v.isoformat()
+        return cors_response(user)
+    except Exception as e:
+        return cors_response({"error": str(e)}, status_code=401)
+
 # Import domain services
 from .domains.auth.service import auth_service
 from .domains.auth.models import UserCreate, LoginRequest
@@ -197,9 +216,31 @@ async def get_asset(request: Request):
         asset = await asset_repo.get_by_id(asset_id)
         if not asset:
             return json_response({"error": "Asset not found"}, 404)
-        json_response(stats, 200)
+        return json_response(asset, 200)
     except Exception as e:
         return Response(status_code=400, body=json.dumps({"error": str(e)}))
+
+@app.put("/assets/:asset_id")
+async def update_asset(request: Request):
+    try:
+        from uuid import UUID
+        asset_id = request.path_params.get("asset_id")
+        body = json.loads(request.body)
+        asset_data = AssetUpdate(**body)
+        await asset_repo.update(UUID(asset_id), asset_data)
+        return json_response({"message": "Asset updated"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+@app.delete("/assets/:asset_id")
+async def delete_asset(request: Request):
+    try:
+        from uuid import UUID
+        asset_id = request.path_params.get("asset_id")
+        await asset_repo.delete(UUID(asset_id))
+        return json_response({"message": "Asset deleted"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
 
 @app.post("/asset-types")
 async def create_asset_type(request: Request):
@@ -247,6 +288,30 @@ async def list_checks_by_asset(request: Request):
     except Exception as e:
         return Response(status_code=400, body=json.dumps({"error": str(e)}))
 
+@app.get("/monitoring/checks/:check_id")
+async def get_check_by_id(request: Request):
+    try:
+        from uuid import UUID
+        check_id = request.path_params.get("check_id")
+        check = await check_repo.get_by_id(UUID(check_id))
+        if not check:
+            return json_response({"error": "Check not found"}, 404)
+        return json_response(check, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+@app.put("/monitoring/checks/:check_id")
+async def update_check(request: Request):
+    try:
+        from uuid import UUID
+        check_id = request.path_params.get("check_id")
+        body = json.loads(request.body)
+        check_data = MonitoringCheckUpdate(**body)
+        await check_repo.update(UUID(check_id), check_data)
+        return json_response({"message": "Check updated"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
 @app.get("/monitoring/results/:check_id")
 async def get_check_results(request: Request):
     try:
@@ -255,6 +320,15 @@ async def get_check_results(request: Request):
         return json_response(results, 200)
     except Exception as e:
         return Response(status_code=400, body=json.dumps({"error": str(e)}))
+
+@app.post("/run-cycle")
+async def run_monitoring_cycle(request: Request):
+    """Manual trigger for monitoring + alert cycle"""
+    try:
+        await scheduler._execute_due_checks()
+        return cors_response({"message": "Monitoring cycle executed"}, 200)
+    except Exception as e:
+        return cors_response({"error": str(e)}, 400)
 
 # ============= ALERT ROUTES =============
 @app.post("/alerts/rules")
@@ -277,6 +351,20 @@ async def update_rule(request: Request):
 async def toggle_rule(request: Request):
     return await toggle_alert_rule(request)
 
+@app.delete("/alerts/rules/:rule_id")
+async def delete_rule(request: Request):
+    """Delete an alert rule"""
+    try:
+        from uuid import UUID
+        rule_id = request.path_params.get("rule_id")
+        # Import delete function from alerts routes
+        from .domains.alerts.repository import AlertRuleRepository
+        repo = AlertRuleRepository()
+        await repo.delete(UUID(rule_id))
+        return cors_response({"message": "Rule deleted"}, 200)
+    except Exception as e:
+        return cors_response({"error": str(e)}, 400)
+
 @app.get("/alerts/incidents")
 async def list_alert_incidents(request: Request):
     return await list_incidents(request)
@@ -285,6 +373,24 @@ async def list_alert_incidents(request: Request):
 async def list_incidents_alias(request: Request):
     """Alias for /alerts/incidents for frontend compatibility"""
     return await list_incidents(request)
+
+@app.post("/incidents")
+async def create_incident_route(request: Request):
+    """Create incident from check failure"""
+    try:
+        from uuid import UUID
+        body = json.loads(request.body)
+        from .domains.alerts.repository import AlertIncidentRepository
+        repo = AlertIncidentRepository()
+        incident_id = await repo.create(body)
+        return cors_response({"id": str(incident_id)}, 201)
+    except Exception as e:
+        return cors_response({"error": str(e)}, 400)
+
+@app.post("/incidents/:incident_id/acknowledge")
+async def ack_incident_alias(request: Request):
+    """Alias for /alerts/incidents/:incident_id/acknowledge"""
+    return await acknowledge_incident(request)
 
 @app.post("/alerts/incidents/:incident_id/acknowledge")
 async def ack_incident(request: Request):
