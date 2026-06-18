@@ -51,8 +51,8 @@ class MonitoringScheduler:
                     FROM monitoring_checks mc
                     LEFT JOIN alert_rules ar ON ar.check_id = mc.id AND ar.enabled = true
                     WHERE mc.enabled = true
-                    AND (mc.last_executed_at IS NULL 
-                         OR NOW() - mc.last_executed_at > INTERVAL '1 second' * mc.interval_seconds)
+                    AND (mc.last_checked_at IS NULL 
+                         OR NOW() - mc.last_checked_at > INTERVAL '1 second' * mc.interval)
                     LIMIT 10
                 """)
                 checks = await cursor.fetchall() or []
@@ -81,13 +81,13 @@ class MonitoringScheduler:
             
             # Store result
             await conn.execute("""
-                INSERT INTO monitoring_results (check_id, status, response_time, error_message)
+                INSERT INTO check_results (check_id, status, response_time, error)
                 VALUES (%s, %s, %s, %s)
             """, (str(check_id), result.status, result.response_time, result.error_message))
             
             # Update last executed time
             await conn.execute("""
-                UPDATE monitoring_checks SET last_executed_at = NOW() WHERE id = %s
+                UPDATE monitoring_checks SET last_checked_at = NOW() WHERE id = %s
             """, (str(check_id),))
             
             # Evaluate alert rules
