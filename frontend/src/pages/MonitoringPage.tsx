@@ -72,7 +72,7 @@ export default function MonitoringPage() {
     }
     setError("")
     try {
-      await api.post("/monitoring/checks", fd)
+      const created = await api.post<any>("/monitoring/checks", fd)
       setShowForm(false)
       setFormData({
         asset_id: "",
@@ -82,6 +82,12 @@ export default function MonitoringPage() {
         interval_seconds: 300,
         enabled: true
       })
+      // Auto-execute right after create for immediate feedback
+      if (created?.id) {
+        const result = await api.post(`/monitoring/checks/${created.id}/execute`, {})
+        setExecResult(result)
+        setTimeout(() => setExecResult(null), 5000)
+      }
       const checksData = await api.get<any[]>("/monitoring/checks")
       setChecks(checksData || [])
     } catch (err) {
