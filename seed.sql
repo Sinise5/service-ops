@@ -1,22 +1,27 @@
 -- ServiceOps Initial Data Seeding
+-- Matches 24-table schema from init.sql
 
 -- Default admin user (password: admin123)
--- Hash generated: bcrypt($2b$12$) with rounds=12
-INSERT INTO users (email, name, password_hash, is_active) VALUES
-('admin@serviceops.local', 'Admin User', '$2b$12$KIXxPfxOvKhhzVKUFC.Pt.wLz4sV1A21E7eqSwqrLEXlh4Q7Pvm0O', true)
+INSERT INTO users (email, username, hashed_password, first_name, last_name, status)
+VALUES ('admin@serviceops.local', 'admin', '$2b$12$KIXxPfxOvKhhzVKUFC.Pt.wLz4sV1A21E7eqSwqrLEXlh4Q7Pvm0O', 'Admin', 'User', 'active')
 ON CONFLICT (email) DO NOTHING;
 
--- Pre-defined asset types
-INSERT INTO asset_types (name, icon) VALUES
-('Server', 'server'),
-('Database', 'database'),
-('API', 'api'),
-('Cache', 'cache'),
-('Queue', 'queue'),
-('Load Balancer', 'lb'),
-('Storage', 'storage'),
-('Other', 'other')
+-- Default roles
+INSERT INTO roles (name, description) VALUES
+  ('admin', 'Administrator with full access'),
+  ('operator', 'Operator with monitoring access'),
+  ('viewer', 'Read-only access')
 ON CONFLICT (name) DO NOTHING;
 
--- Insert default settings if needed
--- (Additional seeding logic as needed)
+-- Pre-defined asset types
+INSERT INTO asset_types (name, description)
+VALUES
+  ('Server', 'Physical or virtual server'),
+  ('Database', 'Database instance'),
+  ('API', 'API endpoint or service'),
+  ('Cache', 'Cache layer (Redis, Memcached)'),
+  ('Queue', 'Message queue (RabbitMQ, Kafka)'),
+  ('Load Balancer', 'Load balancer instance'),
+  ('Storage', 'Storage system (S3, NFS)'),
+  ('Other', 'Other asset type')
+ON CONFLICT (name) DO NOTHING;
