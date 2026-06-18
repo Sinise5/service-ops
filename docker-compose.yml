@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -10,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -29,6 +33,58 @@ services:
       timeout: 3s
       retries: 5
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: serviceops_backend
+    ports:
+      - "9080:9080"
+    environment:
+      PORT: 9080
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/serviceops_dev
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: your-secret-key-change-in-production
+      CORS_ORIGINS: '["http://localhost:5173", "http://frontend:5173"]'
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - serviceops-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: serviceops_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://backend:9080
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5173/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - serviceops-network
+
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  serviceops-network:
+    driver: bridge
