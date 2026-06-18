@@ -7,10 +7,10 @@ from typing import Optional
 class AlertRuleCreate(BaseModel):
     check_id: Optional[UUID] = None
     name: str
-    condition: Optional[str] = None
+    condition: Optional[str] = None  # Optional for advanced rules
     threshold: Optional[float] = None
-    conditions: Optional[list] = None  # [{"field": "response_time_ms", "operator": ">", "value": 1000}]
-    logic: str = "AND"  # AND or OR
+    conditions: Optional[list] = None  # Optional - use for advanced multi-condition rules
+    logic: Optional[str] = "AND"  # AND or OR
     severity: str = "warning"
     enabled: bool = True
     

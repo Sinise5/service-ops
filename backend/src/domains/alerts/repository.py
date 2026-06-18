@@ -13,7 +13,7 @@ class AlertRuleRepository:
                    VALUES (%s, %s, %s, %s, %s::json, %s, %s, %s) RETURNING id""",
                 (str(rule.check_id) if rule.check_id else None, rule.name, rule.condition,
                  rule.threshold, json.dumps(rule.conditions) if rule.conditions else None,
-                 rule.logic, rule.severity, rule.enabled)
+                 rule.logic or "AND", rule.severity, rule.enabled)
             )
             row = await cursor.fetchone()
             return row["id"]
