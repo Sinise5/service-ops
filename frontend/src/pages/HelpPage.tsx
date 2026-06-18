@@ -66,7 +66,7 @@ export default function HelpPage() {
       content: [
         {
           heading: "Alert vs Incident",
-          text: "Alert Rule: Condition trigger\nIncident: Actual event when rule fires"
+          text: "Alert Rule: Condition trigger\\nIncident: Actual event when rule fires"
         },
         {
           heading: "Create Alert Rule",
@@ -74,7 +74,23 @@ export default function HelpPage() {
         },
         {
           heading: "Incident Lifecycle",
-          text: "1. Triggered → created\n2. Acknowledged → team marks seen\n3. Resolved → fixed and closed"
+          text: "1. Triggered → created\\n2. Acknowledged → team marks seen\\n3. Resolved → fixed and closed"
+        },
+        {
+          heading: "Advanced Conditions (New)",
+          text: "Use multiple conditions with AND/OR logic for complex rules.\\nExample: (response_time > 1000 AND status == 'failed') OR response_time > 2000"
+        },
+        {
+          heading: "Condition Fields",
+          text: "response_time_ms • status • output"
+        },
+        {
+          heading: "Operators",
+          text: "> (greater) • < (less) • == (equals) • != (not equals) • >= • <="
+        },
+        {
+          heading: "View Full Guide",
+          text: "See ALERT_RULES_GUIDE.md for complete examples, best practices, and troubleshooting."
         }
       ]
     },
@@ -214,6 +230,10 @@ export default function HelpPage() {
           <a href="#alerts" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 border-red-500">
             <div class="text-2xl mb-2">🔔</div>
             <div class="font-semibold text-slate-900">Alerts</div>
+          </a>
+          <a href="#notifications" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 border-orange-500">
+            <div class="text-2xl mb-2">💬</div>
+            <div class="font-semibold text-slate-900">Notifications</div>
           </a>
         </div>
 
