@@ -57,6 +57,10 @@ export default function HelpPage() {
         {
           heading: "View Results",
           text: "Click check → View Results. See last 50 executions, status, response time, errors."
+        },
+        {
+          heading: "Complete Guide",
+          text: "See MONITORING_GUIDE.md for step-by-step setup, correct configurations, and troubleshooting."
         }
       ]
     },
