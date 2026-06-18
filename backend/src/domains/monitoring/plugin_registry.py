@@ -6,16 +6,16 @@ from .plugins.ssl_plugin import SslPlugin
 class PluginRegistry:
     def __init__(self):
         self.plugins = {
-            'ping': PingPlugin(),
-            'http': HttpPlugin(),
-            'ssl': SslPlugin(),
+            'ping': PingPlugin,
+            'http': HttpPlugin,
+            'ssl': SslPlugin,
         }
     
     def get_plugin(self, check_type: str):
-        plugin = self.plugins.get(check_type)
-        if not plugin:
+        plugin_class = self.plugins.get(check_type)
+        if not plugin_class:
             raise ValueError(f"Unknown check type: {check_type}")
-        return plugin
+        return plugin_class
 
 
 registry = PluginRegistry()
