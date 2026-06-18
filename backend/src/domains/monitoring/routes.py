@@ -23,6 +23,16 @@ async def create_check(request: Request):
         return json_response({"error": str(e)}, 400)
 
 
+@app.get("/monitoring/checks")
+@require_auth
+async def list_all_checks(request: Request):
+    try:
+        checks = await check_repo.list_all()
+        return json_response(checks, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
 @app.get("/monitoring/checks/asset/:asset_id")
 @require_auth
 async def list_checks(request: Request):
