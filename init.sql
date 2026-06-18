@@ -308,7 +308,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
 -- Default admin user (password: admin123)
 -- Hash: bcrypt with 12 rounds
 INSERT INTO users (email, username, hashed_password, first_name, last_name, status)
-VALUES ('admin@serviceops.local', 'admin', '$2b$12$KIXxPfxOvKhhzVKUFC.Pt.wLz4sV1A21E7eqSwqrLEXlh4Q7Pvm0O', 'Admin', 'User', 'active')
+VALUES ('admin@serviceops.local', 'admin', '$2b$12$BLJ.H5Lcr46UuT8THQps2OspZqPbxLBlt3Z5HJbkteTtLO7LbxjoW', 'Admin', 'User', 'active')
 ON CONFLICT (email) DO NOTHING;
 
 -- Default admin role
