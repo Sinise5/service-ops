@@ -65,6 +65,28 @@ export default function HelpPage() {
       ]
     },
     {
+      id: "documentation",
+      title: "📚 Documentation",
+      content: [
+        {
+          heading: "Getting Started",
+          text: "New to ServiceOps? Start with INTEGRATION_GUIDE.md — complete step-by-step setup from assets to Telegram notifications."
+        },
+        {
+          heading: "Monitoring Guide",
+          text: "MONITORING_GUIDE.md: Asset management, HTTP/Ping/SSL/TCP checks, common mistakes, troubleshooting 10s timeout issues, best practices."
+        },
+        {
+          heading: "Alert Rules Guide",
+          text: "ALERT_RULES_GUIDE.md: Single-condition vs multi-condition rules, flexible operators (>, <, ==, !=), AND/OR logic, examples, API reference."
+        },
+        {
+          heading: "All Guides",
+          text: "INTEGRATION_GUIDE.md — End-to-end setup\nMONITORING_GUIDE.md — Monitoring setup\nALERT_RULES_GUIDE.md — Alert rules reference"
+        }
+      ]
+    },
+    {
       id: "alerts",
       title: "🔔 Alerts & Incidents",
       content: [
