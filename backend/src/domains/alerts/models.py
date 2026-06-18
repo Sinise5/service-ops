@@ -7,9 +7,11 @@ from typing import Optional
 class AlertRuleCreate(BaseModel):
     check_id: Optional[UUID] = None
     name: str
-    condition: str  # 'threshold_exceeded', 'check_failed', 'ssl_expiring'
+    condition: Optional[str] = None  # Optional for advanced rules
     threshold: Optional[float] = None
-    severity: str = "warning"  # 'info', 'warning', 'critical'
+    conditions: Optional[list] = None  # Optional - use for advanced multi-condition rules
+    logic: Optional[str] = "AND"  # AND or OR
+    severity: str = "warning"
     enabled: bool = True
     
     @model_validator(mode='before')
@@ -24,6 +26,8 @@ class AlertRuleUpdate(BaseModel):
     name: Optional[str] = None
     condition: Optional[str] = None
     threshold: Optional[float] = None
+    conditions: Optional[list] = None
+    logic: Optional[str] = None
     severity: Optional[str] = None
     enabled: Optional[bool] = None
 
@@ -32,8 +36,10 @@ class AlertRuleResponse(BaseModel):
     id: UUID
     check_id: UUID
     name: str
-    condition: str
+    condition: Optional[str]
     threshold: Optional[float]
+    conditions: Optional[list]
+    logic: str
     severity: str
     enabled: bool
     created_at: datetime

@@ -2,16 +2,18 @@ from .models import AlertRuleCreate, AlertRuleUpdate, AlertIncidentCreate, Notif
 from ...database import db
 from uuid import UUID
 from typing import List
+import json
 
 
 class AlertRuleRepository:
     async def create(self, rule: AlertRuleCreate) -> UUID:
         async with db.get_connection() as conn:
             cursor = await conn.execute(
-                """INSERT INTO alert_rules (check_id, name, condition, threshold, severity, enabled)
-                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
+                """INSERT INTO alert_rules (check_id, name, condition, threshold, conditions, logic, severity, enabled)
+                   VALUES (%s, %s, %s, %s, %s::json, %s, %s, %s) RETURNING id""",
                 (str(rule.check_id) if rule.check_id else None, rule.name, rule.condition,
-                 rule.threshold, rule.severity, rule.enabled)
+                 rule.threshold, json.dumps(rule.conditions) if rule.conditions else None,
+                 rule.logic or "AND", rule.severity, rule.enabled)
             )
             row = await cursor.fetchone()
             return row["id"]
@@ -33,11 +35,15 @@ class AlertRuleRepository:
     async def update(self, rule_id: UUID, rule: AlertRuleUpdate):
         updates = []
         values = []
-        for field in ["name", "condition", "threshold", "severity", "enabled"]:
+        for field in ["name", "condition", "threshold", "conditions", "logic", "severity", "enabled"]:
             val = getattr(rule, field, None)
             if val is not None:
-                updates.append(f"{field} = %s")
-                values.append(val)
+                if field == "conditions":
+                    updates.append(f"{field} = %s::json")
+                    values.append(json.dumps(val) if val else None)
+                else:
+                    updates.append(f"{field} = %s")
+                    values.append(val)
         updates.append("updated_at = NOW()")
         values.append(str(rule_id))
         async with db.get_connection() as conn:

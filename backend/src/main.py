@@ -42,6 +42,22 @@ async def options_handler(request: Request):
 async def health(request: Request):
     return {"status": "ok", "version": "0.1.0"}
 
+@app.get("/api/guides/{filename}")
+async def get_guide(request: Request):
+    filename = request.path_params.get("filename")
+    if not filename or not filename.endswith(".md"):
+        return Response(status_code=400, description="Invalid filename", headers={})
+    
+    import os
+    guide_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), filename)
+    if not os.path.exists(guide_path):
+        return Response(status_code=404, description="Guide not found", headers={})
+    
+    with open(guide_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    return Response(status_code=200, description=content, headers={"Content-Type": "text/plain; charset=utf-8"})
+
 @app.get("/")
 async def root(request: Request):
     return {"message": "ServiceOps API v0.1.0"}
