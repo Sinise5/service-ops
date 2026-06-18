@@ -315,6 +315,44 @@ async def update_check(request: Request):
     except Exception as e:
         return json_response({"error": str(e)}, 400)
 
+@app.post("/monitoring/checks/:check_id/execute")
+async def execute_check_now(request: Request):
+    """Execute a monitoring check immediately and return result"""
+    try:
+        from uuid import UUID
+        from .domains.monitoring.plugin_registry import PluginRegistry
+        check_id = request.path_params.get("check_id")
+        
+        # Get check details
+        check = await check_repo.get_by_id(UUID(check_id))
+        if not check:
+            return json_response({"error": "Check not found"}, 404)
+        
+        # Execute via plugin
+        registry = PluginRegistry()
+        plugin_class = registry.get_plugin(check['check_type'])
+        if not plugin_class:
+            return json_response({"error": f"Plugin not found: {check['check_type']}"}, 400)
+        
+        plugin = plugin_class()
+        result = await plugin.execute(check.get('config', {}))
+        
+        # Store result
+        async with db.get_connection() as conn:
+            await conn.execute("""
+                INSERT INTO monitoring_results (check_id, status, response_time_ms, error_message)
+                VALUES (%s, %s, %s, %s)
+            """, (str(check_id), result.status, result.response_time_ms, result.error_message))
+        
+        return json_response({
+            "status": result.status,
+            "response_time_ms": result.response_time_ms,
+            "error_message": result.error_message,
+            "executed_at": "now"
+        }, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
 @app.get("/monitoring/results/:check_id")
 async def get_check_results(request: Request):
     try:
