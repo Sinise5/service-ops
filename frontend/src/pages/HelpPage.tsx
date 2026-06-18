@@ -15,7 +15,7 @@ export default function HelpPage() {
   const openGuide = async (filename: string) => {
     setLoadingGuide(true)
     try {
-      const response = await fetch(`/${filename}`)
+      const response = await fetch(`http://localhost:9080/api/guides/${filename}`)
       const text = await response.text()
       setGuideContent(text)
       setSelectedGuide(filename)
