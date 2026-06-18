@@ -43,6 +43,8 @@ export default function AlertsPage() {
     check_id: "",
     condition: "threshold_exceeded",
     threshold: 80,
+    conditions: [] as any[],
+    logic: "AND",
     severity: "warning",
     enabled: true
   })

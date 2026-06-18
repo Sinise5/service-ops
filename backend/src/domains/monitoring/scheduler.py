@@ -98,16 +98,55 @@ class MonitoringScheduler:
         except Exception as e:
             logger.error(f"Error running check {check.get('id')}: {e}")
 
+    def _evaluate_conditions(self, conditions: list, logic: str, result) -> bool:
+        """Evaluate multiple conditions with AND/OR logic"""
+        if not conditions:
+            return False
+        
+        results = []
+        for cond in conditions:
+            field = cond.get("field")
+            operator = cond.get("operator")
+            value = cond.get("value")
+            
+            actual = getattr(result, field, None)
+            if actual is None:
+                results.append(False)
+                continue
+            
+            if operator == ">":
+                results.append(actual > value)
+            elif operator == "<":
+                results.append(actual < value)
+            elif operator == "==":
+                results.append(actual == value)
+            elif operator == "!=":
+                results.append(actual != value)
+            elif operator == ">=":
+                results.append(actual >= value)
+            elif operator == "<=":
+                results.append(actual <= value)
+            else:
+                results.append(False)
+        
+        return all(results) if logic == "AND" else any(results)
+
     async def _evaluate_alert(self, check: dict, result):
         """Evaluate alert rule based on check result"""
         try:
             rule_id = check["rule_id"]
-            condition = check["condition"]
+            conditions = check.get("conditions")
+            logic = check.get("logic", "AND")
+            condition = check.get("condition")
             threshold = check.get("threshold")
             
             should_trigger = False
             
-            if condition == "check_failed" and result.status == "failed":
+            # Multi-condition evaluation (new flexible rules)
+            if conditions:
+                should_trigger = self._evaluate_conditions(conditions, logic, result)
+            # Legacy single-condition evaluation (backward compatibility)
+            elif condition == "check_failed" and result.status == "failed":
                 should_trigger = True
             elif condition == "threshold_exceeded" and threshold and result.response_time_ms and result.response_time_ms > threshold:
                 should_trigger = True

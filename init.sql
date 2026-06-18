@@ -139,6 +139,8 @@ CREATE TABLE IF NOT EXISTS alert_rules (
     name VARCHAR(255) NOT NULL,
     condition VARCHAR(50) NOT NULL,
     threshold DOUBLE PRECISION,
+    conditions JSON,
+    logic VARCHAR(10) DEFAULT 'AND',
     severity VARCHAR(20) DEFAULT 'warning' NOT NULL,
     enabled BOOLEAN DEFAULT true NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
