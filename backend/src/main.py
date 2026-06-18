@@ -158,13 +158,16 @@ async def get_me(request: Request):
     if not auth_header.startswith("Bearer "):
         return cors_response({"error": "Unauthorized"}, status_code=401)
     try:
+        from uuid import UUID
         token = auth_header[7:]
         user_id = auth_service.verify_token(token)
-        user = await auth_service.user_repo.get_by_id(user_id)
-        # Convert datetime fields to ISO string
+        user = await auth_service.user_repo.get_by_id(UUID(str(user_id)))
+        # Convert datetime + UUID fields to ISO/string
         if user:
             for k, v in user.items():
-                if hasattr(v, 'isoformat'):
+                if isinstance(v, UUID):
+                    user[k] = str(v)
+                elif hasattr(v, 'isoformat'):
                     user[k] = v.isoformat()
         return cors_response(user)
     except Exception as e:

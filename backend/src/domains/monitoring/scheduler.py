@@ -150,7 +150,7 @@ class MonitoringScheduler:
                     SELECT nc.id, nc.name, nc.type, nc.config
                     FROM alert_notifications an
                     JOIN notification_channels nc ON nc.id = an.channel_id
-                    WHERE an.alert_id = %s AND nc.enabled = true
+                    WHERE an.rule_id = %s AND nc.enabled = true
                 """, (str(rule_id),))
                 channels = await cursor.fetchall() or []
                 
