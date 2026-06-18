@@ -384,6 +384,43 @@ export default function MonitoringPage() {
           )}
         </div>
       </Show>
+
+      <Show when={showLogs()}>
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowLogs(false)}>
+          <div class="bg-slate-900 border border-slate-700 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden" onClick={(e: any) => e.stopPropagation()}>
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+              <h3 class="text-lg font-semibold text-white">Monitoring Results</h3>
+              <button onClick={() => setShowLogs(false)} class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
+              <Show when={logs().length === 0}>
+                <div class="text-slate-400 text-center py-8">No results yet</div>
+              </Show>
+              <Show when={logs().length > 0}>
+                <div class="space-y-2">
+                  <For each={logs()}>
+                    {(log: any) => (
+                      <div class={`p-3 rounded border ${
+                        log.status === 'success' ? 'bg-green-900/20 border-green-700' : 'bg-red-900/20 border-red-700'
+                      }`}>
+                        <div class="flex items-center justify-between text-sm">
+                          <span class="text-slate-300">{new Date(log.checked_at).toLocaleString()}</span>
+                          <span class={log.status === 'success' ? 'text-green-400' : 'text-red-400'}>
+                            {log.status} • {log.response_time_ms}ms
+                          </span>
+                        </div>
+                        <Show when={log.error_message}>
+                          <div class="text-red-300 text-xs mt-1">{log.error_message}</div>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </Show>
+            </div>
+          </div>
+        </div>
+      </Show>
     </Layout>
   )
 }
