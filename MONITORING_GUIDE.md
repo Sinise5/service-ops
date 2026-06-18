@@ -12,7 +12,247 @@ ServiceOps monitoring lets you track availability, performance, and health of yo
 ✅ **Step 2:** Create Monitoring Check (HTTP, Ping, SSL, TCP)  
 ✅ **Step 3:** Verify check executes successfully  
 ✅ **Step 4:** Create Alert Rule (optional)  
-✅ **Step 5:** Set up Notifications (Telegram, Discord, Email)
+✅ **Step 5:** Set up Notifications (Telegram, Discord, Email)  
+✅ **Step 6:** Link Alert Rule to Notification Channel  
+
+---
+
+## End-to-End Integration Flow
+
+### How Everything Connects
+
+ServiceOps automatically integrates all modules. Here's the complete flow:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     COMPLETE FLOW                            │
+└─────────────────────────────────────────────────────────────┘
+
+1. CREATE ASSET
+   └─> Server, API, Database, Infrastructure
+   
+2. CREATE MONITORING CHECK (attached to asset)
+   └─> HTTP, Ping, SSL, TCP
+   └─> Executes automatically every 30-300 seconds
+   └─> Result saved to monitoring_results table
+   
+3. CREATE ALERT RULE (attached to check)
+   └─> Single condition: "threshold_exceeded", "check_failed"
+   └─> OR Multi-condition: response_time > 1000 AND status == "failed"
+   └─> Evaluated automatically after each check execution
+   
+4. IF ALERT TRIGGERS → CREATE INCIDENT
+   └─> Incident record created in alert_incidents table
+   └─> Status: open
+   └─> Severity: info/warning/critical
+   
+5. SEND NOTIFICATIONS (if channel linked)
+   └─> Telegram message
+   └─> Discord webhook
+   └─> Email alert
+   
+6. USER ACKNOWLEDGES/RESOLVES INCIDENT
+   └─> Mark as acknowledged (team aware)
+   └─> Mark as resolved (issue fixed)
+```
+
+### Key Points
+
+✅ **Automatic execution** — Scheduler runs every 30 seconds, checks due monitoring checks  
+✅ **Automatic evaluation** — Alert rules evaluated after each check execution  
+✅ **Automatic notification** — Telegram/Discord/Email sent immediately when alert triggers  
+✅ **No manual trigger needed** — Everything happens automatically once configured  
+
+### What You Need to Setup
+
+**Mandatory:**
+1. ✅ Asset
+2. ✅ Monitoring Check
+
+**Optional (for alerts):**
+3. ✅ Alert Rule
+4. ✅ Notification Channel
+5. ✅ **Link Alert Rule → Notification Channel** (IMPORTANT!)
+
+---
+
+## Part 0: Complete Setup Example (Start to Finish)
+
+### Scenario: Monitor Production API with Telegram Alerts
+
+**Step 1: Create Asset**
+```
+Go to: Assets page
+Click: + New Asset
+Fill:
+  Name: Production API
+  Type: API
+  Description: Main REST API for user services
+  Status: active
+Save
+```
+
+**Step 2: Create Monitoring Check**
+```
+Go to: Monitoring page
+Click: + New Check
+Fill:
+  Name: API Health Check
+  Asset: Production API (select from dropdown)
+  Type: HTTP
+  URL: https://api.example.com/health
+  Method: GET
+  Expected Status: 200
+  Interval: 60 seconds
+  Timeout: 10 seconds
+Save
+```
+
+**Result:** Check runs automatically every 60 seconds
+
+**Step 3: Verify Check Execution**
+```
+Go to: Monitoring page
+Find: API Health Check row
+Click: "Logs" button
+See: Execution history with timestamps, status, response time
+Expected: success • 50-200ms
+```
+
+**Step 4: Create Alert Rule**
+```
+Go to: Alerts page
+Click: + Add Alert Rule
+Fill:
+  Name: API Slow or Failed
+  Check: API Health Check (select from dropdown)
+  
+  Legacy (simple):
+    Condition: Threshold Exceeded
+    Threshold: 1000 (ms)
+  
+  OR Advanced (multi-condition):
+    Click: + Add (condition)
+    Condition 1: response_time_ms > 1000
+    Condition 2: status == "failed"
+    Logic: OR
+  
+  Severity: Critical
+  Enabled: ✓
+Save
+```
+
+**Step 5: Setup Telegram Notification**
+
+**5a. Get Telegram Bot Token**
+```
+1. Open Telegram
+2. Search: @BotFather
+3. Send: /newbot
+4. Follow prompts, get token: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
+```
+
+**5b. Get Chat ID**
+```
+Option A (Group):
+1. Create Telegram group
+2. Add bot to group
+3. Send test message
+4. Visit: https://api.telegram.org/bot<TOKEN>/getUpdates
+5. Find "chat":{"id": -1001234567890}
+6. Copy chat ID: -1001234567890
+
+Option B (Private):
+1. Start chat with bot
+2. Send any message
+3. Visit: https://api.telegram.org/bot<TOKEN>/getUpdates
+4. Find "chat":{"id": 123456789}
+5. Copy chat ID: 123456789
+```
+
+**5c. Create Channel in ServiceOps**
+```
+Go to: Notifications page
+Click: + New Channel
+Fill:
+  Name: Telegram Production Alerts
+  Type: Telegram
+  Bot Token: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
+  Chat ID: -1001234567890
+  Enabled: ✓
+Click: Test (verify message received)
+Save
+```
+
+**Step 6: Link Alert Rule to Notification Channel** ⚠️ **CRITICAL STEP**
+
+```
+Go to: Alerts page
+Find: API Slow or Failed (your rule)
+Click: Edit
+Scroll: Notification Channels section
+Check: ✓ Telegram Production Alerts
+Save
+```
+
+**Result:** When alert triggers → Telegram notification sent automatically
+
+---
+
+## How Scheduler Works (Behind the Scenes)
+
+### Automatic Execution Cycle
+
+```
+Every 30 seconds:
+
+1. Scheduler queries monitoring_checks table
+2. Find checks where: enabled=true AND (last_executed + interval < now)
+3. For each due check:
+   a. Execute check (HTTP/Ping/SSL/TCP plugin)
+   b. Save result to monitoring_results
+   c. JOIN alert_rules WHERE check_id = current_check
+   d. Evaluate alert conditions
+   e. IF triggered:
+      - Check if incident already open for this rule
+      - IF not open: CREATE incident in alert_incidents
+      - Query alert_notifications table for linked channels
+      - Send notification to each linked channel
+4. Sleep 30 seconds
+5. Repeat
+```
+
+### Database Tables Involved
+
+```
+monitoring_checks           ← Checks to execute
+    ↓
+monitoring_results          ← Execution history/logs
+    ↓
+alert_rules                 ← Conditions to evaluate
+    ↓
+alert_incidents             ← Triggered alerts (open/acknowledged/resolved)
+    ↓
+alert_notifications         ← Link: rule_id → channel_id (MANY-TO-MANY)
+    ↓
+notification_channels       ← Telegram/Discord/Email config
+    ↓
+[External: Telegram/Discord/SMTP]
+```
+
+### Why Step 6 (Linking) is Critical
+
+**Without linking** (alert_notifications table empty):
+- ✅ Check executes
+- ✅ Alert rule evaluates
+- ✅ Incident created
+- ❌ **NO notification sent** (no channels linked!)
+
+**With linking** (alert_notifications has rule_id + channel_id):
+- ✅ Check executes
+- ✅ Alert rule evaluates
+- ✅ Incident created
+- ✅ **Notification sent to all linked channels**
 
 ---
 
