@@ -21,12 +21,15 @@ FROM nginx:1.25-alpine
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# SPA routing: redirect all routes to index.html
+# SPA routing: redirect all routes to index.html (except static assets)
 RUN echo 'server { \
   listen 5173; \
   server_name _; \
   root /usr/share/nginx/html; \
   index index.html; \
+  location /assets/ { \
+    try_files $uri =404; \
+  } \
   location / { \
     try_files $uri $uri/ /index.html; \
   } \
