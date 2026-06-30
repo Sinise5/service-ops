@@ -168,16 +168,13 @@ async def test_credentials(request: Request):
     """Test SSH credentials without creating a host."""
     try:
         body = json.loads(request.body)
-        from .crypto import CryptoService
-        crypto = CryptoService()
-        encrypted_password = crypto.encrypt(body.get("password", ""))
         from .ssh_client import SSHClient
         ssh = SSHClient(
             host=body.get("host", ""),
             port=int(body.get("port", 22)),
             username=body.get("username", ""),
             auth_type=body.get("auth_type", "password"),
-            password=encrypted_password,
+            password=body.get("password", ""),
             ssh_key=body.get("ssh_key", ""),
             ssh_key_passphrase=body.get("ssh_key_passphrase", ""),
         )
