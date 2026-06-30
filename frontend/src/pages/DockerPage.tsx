@@ -7,9 +7,10 @@ import ContainerList from "../components/docker/ContainerList"
 import ImageList from "../components/docker/ImageList"
 import VolumeList from "../components/docker/VolumeList"
 import ComposePanel from "../components/docker/ComposePanel"
+import GitPanel from "../components/docker/GitPanel"
 import DeployForm from "../components/docker/DeployForm"
 
-type Tab = "hosts" | "containers" | "images" | "volumes" | "compose" | "deploy"
+type Tab = "hosts" | "containers" | "images" | "volumes" | "compose" | "git" | "deploy"
 
 export default function DockerPage() {
   const [activeTab, setActiveTab] = createSignal<Tab>("hosts")
@@ -48,6 +49,7 @@ export default function DockerPage() {
     { key: "images", label: "Images" },
     { key: "volumes", label: "Volumes" },
     { key: "compose", label: "Compose" },
+    { key: "git", label: "Git" },
     { key: "deploy", label: "Deploy" },
   ]
 
@@ -143,6 +145,10 @@ export default function DockerPage() {
 
       <Show when={activeTab() === "compose" && selectedHost()}>
         <ComposePanel hostId={selectedHost()!} />
+      </Show>
+
+      <Show when={activeTab() === "git" && selectedHost()}>
+        <GitPanel hostId={selectedHost()!} />
       </Show>
 
       <Show when={activeTab() === "deploy" && selectedHost()}>

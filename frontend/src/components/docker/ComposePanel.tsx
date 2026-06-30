@@ -8,18 +8,63 @@ export default function ComposePanel(props: { hostId: string }) {
   const [actionLoading, setActionLoading] = createSignal<Record<string, string>>({})
   const [editingProject, setEditingProject] = createSignal<any>(null)
   const [showFile, setShowFile] = createSignal<any>(null)
+  const [quickPath, setQuickPath] = createSignal("")
+  const [quickLoading, setQuickLoading] = createSignal(false)
+  const [quickResult, setQuickResult] = createSignal("")
 
   const [projects, { refetch }] = createResource(() => props.hostId, (id) => dockerApi.listCompose(id))
+
+  const doBuild = async (projectId: string) => {
+    setActionLoading({ ...actionLoading(), [projectId]: "build" })
+    try {
+      await dockerApi.composeBuild(props.hostId, projectId)
+      refetch()
+    } catch (e: any) {
+      alert(`Build failed: ${e.message}`)
+    }
+    setActionLoading({ ...actionLoading(), [projectId]: "" })
+  }
+
+  const doUpBuild = async (projectId: string) => {
+    setActionLoading({ ...actionLoading(), [projectId]: "upbuild" })
+    try {
+      await dockerApi.composeUp(props.hostId, projectId, true)
+      refetch()
+    } catch (e: any) {
+      alert(`Up --build failed: ${e.message}`)
+    }
+    setActionLoading({ ...actionLoading(), [projectId]: "" })
+  }
 
   const doAction = async (projectId: string, action: string) => {
     setActionLoading({ ...actionLoading(), [projectId]: action })
     try {
-      await dockerApi[`compose${action.charAt(0).toUpperCase() + action.slice(1)}`](props.hostId, projectId)
+      const actionMap: Record<string, (h: string, p: string) => Promise<any>> = {
+        up: dockerApi.composeUp,
+        down: dockerApi.composeDown,
+        restart: dockerApi.composeRestart,
+        scale: dockerApi.composeScale,
+      }
+      await actionMap[action]?.(props.hostId, projectId)
       refetch()
     } catch (e: any) {
       alert(`${action} failed: ${e.message}`)
     }
     setActionLoading({ ...actionLoading(), [projectId]: "" })
+  }
+
+  const doQuickBuildUp = async () => {
+    const path = quickPath().trim()
+    if (!path) return
+    setQuickLoading(true)
+    setQuickResult("")
+    try {
+      const res = await dockerApi.composeBuildUp(props.hostId, path)
+      setQuickResult(res.build || res.up || JSON.stringify(res))
+    } catch (e: any) {
+      setQuickResult(`❌ ${e.message}`)
+    }
+    setQuickLoading(false)
   }
 
   const addProject = async () => {
@@ -111,6 +156,12 @@ export default function ComposePanel(props: { hostId: string }) {
                       <button onClick={() => doAction(proj.id, "up")}
                         disabled={actionLoading()[proj.id] === "up"}
                         class="px-2 py-1 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-400 rounded text-xs border border-emerald-800/50 disabled:opacity-50">Up</button>
+                      <button onClick={() => doUpBuild(proj.id)}
+                        disabled={actionLoading()[proj.id] === "upbuild"}
+                        class="px-2 py-1 bg-cyan-900/30 hover:bg-cyan-800/50 text-cyan-400 rounded text-xs border border-cyan-800/50 disabled:opacity-50">Up & Build</button>
+                      <button onClick={() => doBuild(proj.id)}
+                        disabled={actionLoading()[proj.id] === "build"}
+                        class="px-2 py-1 bg-amber-900/30 hover:bg-amber-800/50 text-amber-400 rounded text-xs border border-amber-800/50 disabled:opacity-50">Build</button>
                       <button onClick={() => doAction(proj.id, "down")}
                         disabled={actionLoading()[proj.id] === "down"}
                         class="px-2 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs border border-red-800/50 disabled:opacity-50">Down</button>
@@ -137,6 +188,24 @@ export default function ComposePanel(props: { hostId: string }) {
           </div>
         </Show>
       </Show>
+
+      {/* Quick Build & Up (by path, no register needed) */}
+      <div class="bg-slate-800/40 border border-dashed border-slate-700 rounded-lg p-4 space-y-3">
+        <h4 class="text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Build & Up</h4>
+        <p class="text-xs text-slate-500">Build and start containers at an arbitrary compose file path — no registration needed.</p>
+        <div class="flex gap-2">
+          <input value={quickPath()} onInput={(e) => setQuickPath(e.currentTarget.value)}
+            class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 font-mono"
+            placeholder="/opt/project/docker-compose.yml" />
+          <button onClick={doQuickBuildUp} disabled={quickLoading() || !quickPath().trim()}
+            class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+            {quickLoading() ? "⏳ Working..." : "Build & Up"}
+          </button>
+        </div>
+        <Show when={quickResult()}>
+          <pre class="bg-slate-950 border border-slate-800 rounded p-3 text-xs text-slate-300 max-h-40 overflow-y-auto font-mono">{quickResult()}</pre>
+        </Show>
+      </div>
 
       {/* Editor Modal */}
       <Show when={showFile()}>

@@ -355,10 +355,19 @@ class DockerService:
         return stdout + stderr
 
     # ─── Compose Operations ──────────────────────
-    async def compose_up(self, project_path: str) -> str:
+    async def compose_build(self, project_path: str, services: Optional[list[str]] = None) -> str:
+        svc_args = " ".join(services) if services else ""
+        cmd = f"docker compose -f {project_path} build {svc_args}"
+        stdout, stderr, code = await self._run(cmd, timeout=600)
+        if code != 0:
+            raise SSHError(f"docker compose build failed: {stderr}")
+        return stdout + stderr
+
+    async def compose_up(self, project_path: str, build: bool = False) -> str:
+        build_flag = "--build " if build else ""
         stdout, stderr, code = await self._run(
-            f"docker compose -f {project_path} up -d",
-            timeout=60
+            f"docker compose -f {project_path} up -d {build_flag}".strip(),
+            timeout=600
         )
         if code != 0:
             raise SSHError(f"docker compose up failed: {stderr}")

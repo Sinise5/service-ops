@@ -426,9 +426,45 @@ async def compose_up(request: Request):
         project = await _COMPOSE_REPO.get_by_id(UUID(project_id))
         if not project:
             return json_response({"error": "Project not found"}, 404)
+        build = request.query_params.get("build", "false").lower() == "true"
         service = _get_service(request, host_id)
-        result = await service.compose_up(project.path)
+        result = await service.compose_up(project.path, build=build)
         return json_response({"message": result}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
+async def compose_build(request: Request):
+    """Build images for a registered compose project."""
+    try:
+        host_id = request.path_params.get("host_id")
+        project_id = request.path_params.get("project_id")
+        project = await _COMPOSE_REPO.get_by_id(UUID(project_id))
+        if not project:
+            return json_response({"error": "Project not found"}, 404)
+        body = json.loads(request.body) if request.body else {}
+        services = body.get("services", None)
+        service = _get_service(request, host_id)
+        result = await service.compose_build(project.path, services=services)
+        return json_response({"message": result}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
+async def compose_build_up(request: Request):
+    """Build + up at an arbitrary path without registering first."""
+    try:
+        host_id = request.path_params.get("host_id")
+        body = json.loads(request.body)
+        compose_path = body.get("path", "")
+        if not compose_path:
+            return json_response({"error": "path is required"}, 400)
+        service = _get_service(request, host_id)
+        # Build first
+        build_result = await service.compose_build(compose_path)
+        # Then up
+        up_result = await service.compose_up(compose_path, build=False)
+        return json_response({"build": build_result, "up": up_result}, 200)
     except Exception as e:
         return json_response({"error": str(e)}, 500)
 

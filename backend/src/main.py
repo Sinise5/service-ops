@@ -121,9 +121,19 @@ from .domains.docker.routes import (
     list_compose_projects, add_compose_project,
     compose_up, compose_down, compose_restart, compose_scale,
     compose_read_file, compose_write_file, compose_config,
+    compose_build, compose_build_up,
+    system_prune, bulk_container_action,
+)
+from .domains.docker.routes import (
     deploy_container, list_templates, create_template, delete_template,
     save_container_logs, get_saved_logs,
-    system_prune, bulk_container_action,
+)
+from .domains.docker.git_routes import (
+    git_clone, git_pull, git_fetch, git_checkout,
+    git_branch_list, git_log, git_status,
+    git_remote_list, git_remote_add, git_push,
+    git_stash, git_diff, git_reset, git_web_url,
+    git_ls_dir,
 )
 from .domains.audit.routes import (
     get_audit_logs, get_user_activity,
@@ -748,6 +758,14 @@ async def docker_compose_read_file(request: Request):
 async def docker_compose_write_file(request: Request):
     return await compose_write_file(request)
 
+@app.post("/docker/hosts/:host_id/compose/:project_id/build")
+async def docker_compose_build(request: Request):
+    return await compose_build(request)
+
+@app.post("/docker/hosts/:host_id/compose/build-up")
+async def docker_compose_build_up(request: Request):
+    return await compose_build_up(request)
+
 # Deploy
 @app.post("/docker/hosts/:host_id/deploy")
 async def docker_deploy(request: Request):
@@ -774,6 +792,67 @@ async def docker_save_logs(request: Request):
 @app.get("/docker/hosts/:host_id/containers/:container_id/logs/saved")
 async def docker_get_saved_logs(request: Request):
     return await get_saved_logs(request)
+
+# ─── Git Operations ────────────────────────────
+@app.post("/docker/hosts/:host_id/git/clone")
+async def docker_git_clone(request: Request):
+    return await git_clone(request)
+
+@app.post("/docker/hosts/:host_id/git/pull")
+async def docker_git_pull(request: Request):
+    return await git_pull(request)
+
+@app.post("/docker/hosts/:host_id/git/fetch")
+async def docker_git_fetch(request: Request):
+    return await git_fetch(request)
+
+@app.post("/docker/hosts/:host_id/git/checkout")
+async def docker_git_checkout(request: Request):
+    return await git_checkout(request)
+
+@app.post("/docker/hosts/:host_id/git/branches")
+async def docker_git_branches(request: Request):
+    return await git_branch_list(request)
+
+@app.post("/docker/hosts/:host_id/git/log")
+async def docker_git_log(request: Request):
+    return await git_log(request)
+
+@app.post("/docker/hosts/:host_id/git/status")
+async def docker_git_status(request: Request):
+    return await git_status(request)
+
+@app.post("/docker/hosts/:host_id/git/remotes")
+async def docker_git_remotes(request: Request):
+    return await git_remote_list(request)
+
+@app.post("/docker/hosts/:host_id/git/remote-add")
+async def docker_git_remote_add(request: Request):
+    return await git_remote_add(request)
+
+@app.post("/docker/hosts/:host_id/git/push")
+async def docker_git_push(request: Request):
+    return await git_push(request)
+
+@app.post("/docker/hosts/:host_id/git/stash")
+async def docker_git_stash(request: Request):
+    return await git_stash(request)
+
+@app.post("/docker/hosts/:host_id/git/diff")
+async def docker_git_diff(request: Request):
+    return await git_diff(request)
+
+@app.post("/docker/hosts/:host_id/git/reset")
+async def docker_git_reset(request: Request):
+    return await git_reset(request)
+
+@app.post("/docker/hosts/:host_id/git/remote-url")
+async def docker_git_remote_url(request: Request):
+    return await git_web_url(request)
+
+@app.post("/docker/hosts/:host_id/git/ls-dir")
+async def docker_git_ls_dir(request: Request):
+    return await git_ls_dir(request)
 
 if __name__ == "__main__":
     import asyncio

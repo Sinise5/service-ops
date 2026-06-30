@@ -76,8 +76,8 @@ export const dockerApi = {
   listCompose: (hostId: string) => request(`/docker/hosts/${hostId}/compose/projects`),
   addCompose: (hostId: string, data: any) =>
     request(`/docker/hosts/${hostId}/compose/projects`, { method: "POST", body: JSON.stringify(data) }),
-  composeUp: (hostId: string, projectId: string) =>
-    request(`/docker/hosts/${hostId}/compose/${projectId}/up`, { method: "POST" }),
+  composeUp: (hostId: string, projectId: string, build = false) =>
+    request(`/docker/hosts/${hostId}/compose/${projectId}/up${build ? "?build=true" : ""}`, { method: "POST" }),
   composeDown: (hostId: string, projectId: string, sshPassword?: string) =>
     request(`/docker/hosts/${hostId}/compose/${projectId}/down`, { method: "POST" }, sshPassword),
   composeRestart: (hostId: string, projectId: string) =>
@@ -95,6 +95,16 @@ export const dockerApi = {
     request(`/docker/hosts/${hostId}/compose/${projectId}/file`, {
       method: "PUT",
       body: JSON.stringify({ content }),
+    }),
+  composeBuild: (hostId: string, projectId: string, services?: string[]) =>
+    request(`/docker/hosts/${hostId}/compose/${projectId}/build`, {
+      method: "POST",
+      body: JSON.stringify({ services: services || [] }),
+    }),
+  composeBuildUp: (hostId: string, composePath: string) =>
+    request(`/docker/hosts/${hostId}/compose/build-up`, {
+      method: "POST",
+      body: JSON.stringify({ path: composePath }),
     }),
 
   // Templates
@@ -114,4 +124,71 @@ export const dockerApi = {
   getSavedLogs: (hostId: string, containerId: string, limit = 100) =>
     request(`/docker/hosts/${hostId}/containers/${containerId}/logs/saved?limit=${limit}`),
   saveLogs: (data: any) => request("/docker/logs/save", { method: "POST", body: JSON.stringify(data) }),
+
+  // Git
+  gitClone: (hostId: string, url: string, path: string, branch?: string, depth?: number) =>
+    request(`/docker/hosts/${hostId}/git/clone`, {
+      method: "POST",
+      body: JSON.stringify({ url, path, branch: branch || null, depth: depth || null }),
+    }),
+  gitPull: (hostId: string, path: string, rebase = false) =>
+    request(`/docker/hosts/${hostId}/git/pull`, {
+      method: "POST",
+      body: JSON.stringify({ path, rebase }),
+    }),
+  gitFetch: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/fetch`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  gitCheckout: (hostId: string, path: string, branch: string, create = false) =>
+    request(`/docker/hosts/${hostId}/git/checkout`, {
+      method: "POST",
+      body: JSON.stringify({ path, branch, create }),
+    }),
+  gitBranches: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/branches`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  gitLog: (hostId: string, path: string, n = 20, branch?: string) =>
+    request(`/docker/hosts/${hostId}/git/log`, {
+      method: "POST",
+      body: JSON.stringify({ path, n, branch: branch || null }),
+    }),
+  gitStatus: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/status`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  gitRemotes: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/remotes`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  gitPush: (hostId: string, path: string, remote = "origin", branch?: string, force = false) =>
+    request(`/docker/hosts/${hostId}/git/push`, {
+      method: "POST",
+      body: JSON.stringify({ path, remote, branch: branch || null, force }),
+    }),
+  gitStash: (hostId: string, path: string, pop = false, message?: string) =>
+    request(`/docker/hosts/${hostId}/git/stash`, {
+      method: "POST",
+      body: JSON.stringify({ path, pop, message: message || null }),
+    }),
+  gitDiff: (hostId: string, path: string, staged = false) =>
+    request(`/docker/hosts/${hostId}/git/diff`, {
+      method: "POST",
+      body: JSON.stringify({ path, staged }),
+    }),
+  gitRemoteUrl: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/remote-url`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  gitLsDir: (hostId: string, path: string) =>
+    request(`/docker/hosts/${hostId}/git/ls-dir`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
 }
