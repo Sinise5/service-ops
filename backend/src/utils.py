@@ -1,23 +1,28 @@
-"""Shared utilities — safe to import anywhere (no circular deps)"""
-from robyn import Request
-from robyn.responses import Response
+"""Utility functions for HTTP response handling."""
 import json
+from uuid import UUID
+from robyn import Response
 
 
-def get_header(request: Request, name: str, default: str = "") -> str:
-    """Safe header getter for Robyn 0.84"""
-    try:
-        return request.headers.get(name) or default
-    except TypeError:
-        if hasattr(request.headers, name.lower()):
-            return getattr(request.headers, name.lower(), default)
-        return default
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)
+        return super().default(obj)
 
 
-def json_response(data: dict, status_code: int = 200) -> Response:
-    """Safe JSON response for Robyn 0.84"""
+def json_response(data, status_code: int = 200) -> Response:
+    """Return a JSON response with proper serialization."""
     return Response(
         status_code=status_code,
-        description=json.dumps(data, default=str),
-        headers={"Content-Type": "application/json"}
+        body=json.dumps(data, cls=UUIDEncoder),
+        headers={"Content-Type": "application/json"},
     )
+
+
+def get_header(request, key: str, default: str | None = None) -> str | None:
+    """Extract a header from a Robyn request."""
+    headers = getattr(request, "headers", {})
+    if isinstance(headers, dict):
+        return headers.get(key.lower(), headers.get(key, default))
+    return default

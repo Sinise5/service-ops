@@ -12,6 +12,7 @@ import SLAPage from "./pages/SLAPage"
 import TopologyPage from "./pages/TopologyPage"
 import SettingsPage from "./pages/SettingsPage"
 import HelpPage from "./pages/HelpPage"
+import DockerPage from "./pages/DockerPage"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import "./index.css"
 
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/topology" component={() => <WrappedProtectedRoute component={TopologyPage} />} />
         <Route path="/settings" component={() => <WrappedProtectedRoute component={SettingsPage} />} />
         <Route path="/logs" component={() => <WrappedProtectedRoute component={LogsPage} />} />
+        <Route path="/docker" component={() => <WrappedProtectedRoute component={DockerPage} />} />
         <Route path="/help" component={() => <WrappedProtectedRoute component={HelpPage} />} />
         <Route path="/" component={() => <Navigate href="/dashboard" />} />
       </Router>

@@ -109,6 +109,19 @@ from .domains.topology.routes import (
     create_dependency, get_dependencies, get_topology_graph,
     remove_dependency, get_impact_analysis
 )
+from .domains.docker.routes import (
+    list_hosts, create_host, get_host, update_host, delete_host, test_host_connection,
+    list_containers, container_inspect, container_stats, container_logs,
+    container_start, container_stop, container_restart, container_remove,
+    container_exec, container_replica, clone_container,
+    list_images, pull_image, remove_image,
+    list_volumes, remove_volume,
+    list_compose_projects, add_compose_project,
+    compose_up, compose_down, compose_restart, compose_scale,
+    compose_read_file, compose_write_file, compose_config,
+    deploy_container, list_templates, create_template, delete_template,
+    save_container_logs, get_saved_logs,
+)
 from .domains.audit.routes import (
     get_audit_logs, get_user_activity,
     health_check, metrics, run_backup
@@ -589,6 +602,163 @@ async def system_metrics(request: Request):
 @app.post("/backup")
 async def backup(request: Request):
     return await run_backup(request)
+
+# ============= DOCKER ROUTES =============
+# Hosts
+@app.get("/docker/hosts")
+async def docker_list_hosts(request: Request):
+    return await list_hosts(request)
+
+@app.post("/docker/hosts")
+async def docker_create_host(request: Request):
+    return await create_host(request)
+
+@app.get("/docker/hosts/:host_id")
+async def docker_get_host(request: Request):
+    return await get_host(request)
+
+@app.put("/docker/hosts/:host_id")
+async def docker_update_host(request: Request):
+    return await update_host(request)
+
+@app.delete("/docker/hosts/:host_id")
+async def docker_delete_host(request: Request):
+    return await delete_host(request)
+
+@app.post("/docker/hosts/:host_id/test")
+async def docker_test_host(request: Request):
+    return await test_host_connection(request)
+
+# Containers
+@app.get("/docker/hosts/:host_id/containers")
+async def docker_list_containers(request: Request):
+    return await list_containers(request)
+
+@app.get("/docker/hosts/:host_id/containers/:container_id/inspect")
+async def docker_container_inspect(request: Request):
+    return await container_inspect(request)
+
+@app.get("/docker/hosts/:host_id/containers/:container_id/stats")
+async def docker_container_stats(request: Request):
+    return await container_stats(request)
+
+@app.get("/docker/hosts/:host_id/containers/:container_id/logs")
+async def docker_container_logs(request: Request):
+    return await container_logs(request)
+
+@app.post("/docker/hosts/:host_id/containers/:container_id/start")
+async def docker_container_start(request: Request):
+    return await container_start(request)
+
+@app.post("/docker/hosts/:host_id/containers/:container_id/stop")
+async def docker_container_stop(request: Request):
+    return await container_stop(request)
+
+@app.post("/docker/hosts/:host_id/containers/:container_id/restart")
+async def docker_container_restart(request: Request):
+    return await container_restart(request)
+
+@app.delete("/docker/hosts/:host_id/containers/:container_id")
+async def docker_container_remove(request: Request):
+    return await container_remove(request)
+
+@app.post("/docker/hosts/:host_id/containers/exec")
+async def docker_container_exec(request: Request):
+    return await container_exec(request)
+
+@app.post("/docker/hosts/:host_id/containers/:container_id/replica")
+async def docker_container_replica(request: Request):
+    return await container_replica(request)
+
+@app.post("/docker/hosts/:host_id/containers/:container_id/clone")
+async def docker_clone_container(request: Request):
+    return await clone_container(request)
+
+# Images
+@app.get("/docker/hosts/:host_id/images")
+async def docker_list_images(request: Request):
+    return await list_images(request)
+
+@app.post("/docker/hosts/:host_id/images/pull")
+async def docker_pull_image(request: Request):
+    return await pull_image(request)
+
+@app.delete("/docker/hosts/:host_id/images/:image_id")
+async def docker_remove_image(request: Request):
+    return await remove_image(request)
+
+# Volumes
+@app.get("/docker/hosts/:host_id/volumes")
+async def docker_list_volumes(request: Request):
+    return await list_volumes(request)
+
+@app.delete("/docker/hosts/:host_id/volumes/:volume_name")
+async def docker_remove_volume(request: Request):
+    return await remove_volume(request)
+
+# Compose
+@app.get("/docker/hosts/:host_id/compose/projects")
+async def docker_list_compose(request: Request):
+    return await list_compose_projects(request)
+
+@app.post("/docker/hosts/:host_id/compose/projects")
+async def docker_add_compose(request: Request):
+    return await add_compose_project(request)
+
+@app.post("/docker/hosts/:host_id/compose/:project_id/up")
+async def docker_compose_up(request: Request):
+    return await compose_up(request)
+
+@app.post("/docker/hosts/:host_id/compose/:project_id/down")
+async def docker_compose_down(request: Request):
+    return await compose_down(request)
+
+@app.post("/docker/hosts/:host_id/compose/:project_id/restart")
+async def docker_compose_restart(request: Request):
+    return await compose_restart(request)
+
+@app.post("/docker/hosts/:host_id/compose/:project_id/scale")
+async def docker_compose_scale(request: Request):
+    return await compose_scale(request)
+
+@app.get("/docker/hosts/:host_id/compose/:project_id/config")
+async def docker_compose_config(request: Request):
+    return await compose_config(request)
+
+@app.get("/docker/hosts/:host_id/compose/:project_id/file")
+async def docker_compose_read_file(request: Request):
+    return await compose_read_file(request)
+
+@app.put("/docker/hosts/:host_id/compose/:project_id/file")
+async def docker_compose_write_file(request: Request):
+    return await compose_write_file(request)
+
+# Deploy
+@app.post("/docker/hosts/:host_id/deploy")
+async def docker_deploy(request: Request):
+    return await deploy_container(request)
+
+# Templates
+@app.get("/docker/templates")
+async def docker_list_templates(request: Request):
+    return await list_templates(request)
+
+@app.post("/docker/templates")
+async def docker_create_template(request: Request):
+    return await create_template(request)
+
+@app.delete("/docker/templates/:template_id")
+async def docker_delete_template(request: Request):
+    return await delete_template(request)
+
+# Container Logs (DB retention)
+@app.post("/docker/logs/save")
+async def docker_save_logs(request: Request):
+    return await save_container_logs(request)
+
+@app.get("/docker/hosts/:host_id/containers/:container_id/logs/saved")
+async def docker_get_saved_logs(request: Request):
+    return await get_saved_logs(request)
 
 if __name__ == "__main__":
     import asyncio
