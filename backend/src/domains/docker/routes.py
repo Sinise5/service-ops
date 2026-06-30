@@ -287,6 +287,26 @@ async def remove_image(request: Request):
         return json_response({"error": str(e)}, 500)
 
 
+async def bulk_remove_images(request: Request):
+    try:
+        host_id = request.path_params.get("host_id")
+        body = json.loads(request.body)
+        image_ids = body.get("image_ids", [])
+        if not image_ids:
+            return json_response({"error": "No images specified"}, 400)
+        service = _get_service(request, host_id)
+        results = []
+        for img_id in image_ids:
+            try:
+                result = await service.remove_image(img_id, force=True)
+                results.append({"id": img_id, "status": "deleted", "message": result})
+            except Exception as e:
+                results.append({"id": img_id, "status": "error", "message": str(e)})
+        return json_response({"results": results}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
 # ═══════════════════════════════════════════════
 #  VOLUME OPERATIONS
 # ═══════════════════════════════════════════════

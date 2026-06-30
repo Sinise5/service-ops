@@ -51,6 +51,8 @@ export const dockerApi = {
     request(`/docker/hosts/${hostId}/images/pull`, { method: "POST", body: JSON.stringify({ image }) }),
   removeImage: (hostId: string, imageId: string, force = false) =>
     request(`/docker/hosts/${hostId}/images/${imageId}?force=${force}`, { method: "DELETE" }),
+  bulkRemoveImages: (hostId: string, imageIds: string[]) =>
+    request(`/docker/hosts/${hostId}/images/bulk-delete`, { method: "POST", body: JSON.stringify({ image_ids: imageIds }) }),
 
   // Volumes
   listVolumes: (hostId: string) => request(`/docker/hosts/${hostId}/volumes`),

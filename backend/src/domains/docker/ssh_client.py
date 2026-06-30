@@ -39,14 +39,12 @@ class SSHClient:
         kwargs = {
             "username": self.username,
             "port": self.port,
-            "known_hosts": None,  # Disable host key verification for flexibility
+            "known_hosts": None,
         }
         if self.auth_type == "password" and self.password:
             kwargs["password"] = self.password
         elif self.auth_type == "key" and self.ssh_key:
-            # Parse key — can be PEM content or file path
             import tempfile, os
-            # Write key to temp file (permissions 600)
             fd, path = tempfile.mkstemp(mode="w", suffix=".key")
             try:
                 os.write(fd, self.ssh_key.encode())
@@ -83,32 +81,20 @@ class SSHClient:
         timeout: int = 30,
         cwd: Optional[str] = None,
     ) -> tuple[str, str, int]:
-        """
-        Execute a command via SSH.
-        Returns (stdout, stderr, exit_code).
-        """
-        async with self.connection() as conn:
-            env = {}
-            if cwd:
-                # Only cd if directory exists; otherwise run directly
-                command = f"cd {cwd!r} 2>/dev/null || true && {command}"
+        if cwd:
+            command = f"cd {cwd!r} 2>/dev/null || true && {command}"
 
-            result = await conn.run(
-                command,
-                timeout=timeout,
-                check=False,
-            )
+        async with self.connection() as conn:
+            try:
+                result = await conn.run(command, timeout=timeout, check=False)
+            except asyncssh.process.TimeoutError:
+                raise SSHError(f"Command timed out after {timeout}s")
             stdout = result.stdout if result.stdout else ""
             stderr = result.stderr if result.stderr else ""
             return stdout, stderr, result.exit_status
 
     async def exec_stream(self, command: str, cwd: Optional[str] = None):
-        """
-        Async generator that yields lines from a streaming command.
-        Use for docker logs -f etc.
-        """
         if cwd:
-            # Only cd if directory exists; otherwise run directly
             command = f"cd {cwd!r} 2>/dev/null || true && {command}"
 
         async with self.connection() as conn:
@@ -118,7 +104,6 @@ class SSHClient:
                 await process.exit(0)
 
     async def test_connection(self) -> dict:
-        """Test SSH + basic docker access."""
         try:
             stdout, stderr, code = await self.exec("docker version --format '{{.Server.Version}}'", timeout=10)
             if code == 0:
@@ -135,10 +120,6 @@ class SSHClient:
 # Connection Pool
 # ─────────────────────────────────────────────
 class SSHPool:
-    """
-    Simple SSH connection pool — one SSHClient per host_id.
-    Keeps connections alive for reuse.
-    """
     def __init__(self, max_per_host: int = 5):
         self._clients: dict[str, SSHClient] = {}
         self._locks: dict[str, asyncio.Lock] = {}
@@ -153,12 +134,9 @@ class SSHPool:
         return SSHClient(**ssh_kwargs)
 
     async def release(self, host_id: str):
-        # Currently no persistent connection caching
-        # Just let the context manager handle cleanup
         pass
 
     async def evict_all(self):
-        """Close all pooled connections."""
         self._clients.clear()
         self._last_used.clear()
 

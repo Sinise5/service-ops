@@ -116,7 +116,7 @@ from .domains.docker.routes import (
     list_containers, container_inspect, container_stats, container_logs,
     container_start, container_stop, container_restart, container_remove,
     container_exec, container_replica, clone_container,
-    list_images, pull_image, remove_image,
+    list_images, pull_image, remove_image, bulk_remove_images,
     list_volumes, remove_volume,
     list_compose_projects, add_compose_project,
     compose_up, compose_down, compose_restart, compose_scale,
@@ -688,6 +688,10 @@ async def docker_pull_image(request: Request):
 @app.delete("/docker/hosts/:host_id/images/:image_id")
 async def docker_remove_image(request: Request):
     return await remove_image(request)
+
+@app.post("/docker/hosts/:host_id/images/bulk-delete")
+async def docker_bulk_remove_images(request: Request):
+    return await bulk_remove_images(request)
 
 # Volumes
 @app.get("/docker/hosts/:host_id/volumes")

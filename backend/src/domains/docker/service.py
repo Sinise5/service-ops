@@ -187,8 +187,8 @@ class DockerService:
 
         ts_flag = "--timestamps" if timestamps else ""
         stdout, stderr, code = await self._run(
-            f"docker {context_flag} logs --tail {tail} {ts_flag} {container_id}",
-            timeout=15
+            f"timeout 30 docker {context_flag} logs --tail {tail} {ts_flag} {container_id} 2>&1",
+            timeout=60
         )
         # docker logs returns exit code 0 even on error
         return stdout + stderr
