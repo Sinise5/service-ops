@@ -51,21 +51,30 @@ export default function ComposePanel(props: { hostId: string }) {
   }
 
   return (
-    <div>
-      {/* Add Project */}
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-white font-medium text-sm">Compose Projects</h2>
+    <div class="space-y-4">
+      {/* Header + Add button */}
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="text-xs text-slate-500">
+          <Show when={projects()} fallback="Loading...">
+            {projects()?.length || 0} compose project{projects()?.length !== 1 ? "s" : ""}
+          </Show>
+        </div>
         <button onClick={() => setShowAdd(true)}
-          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium">+ Add Project</button>
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+          + Add Project
+        </button>
       </div>
 
+      {/* Add form */}
       <Show when={showAdd()}>
-        <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-4">
-          <div class="space-y-2">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div class="space-y-3">
             <input value={addForm().name} onInput={(e) => setAddForm({ ...addForm(), name: e.currentTarget.value })}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white" placeholder="Project name" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500"
+              placeholder="Project name" />
             <input value={addForm().path} onInput={(e) => setAddForm({ ...addForm(), path: e.currentTarget.value })}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white" placeholder="/opt/compose/project" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500"
+              placeholder="/opt/compose/project" />
           </div>
           <div class="flex gap-2 mt-3">
             <button onClick={addProject}
@@ -76,29 +85,35 @@ export default function ComposePanel(props: { hostId: string }) {
         </div>
       </Show>
 
-      {/* Project List */}
-      <Show when={!projects.loading} fallback={<div class="space-y-2">{[1,2,3].map(() => <div class="h-20 bg-slate-800/50 rounded-xl animate-pulse"></div>)}</div>}>
+      {/* Project list */}
+      <Show when={!projects.loading} fallback={
+        <div class="space-y-2">
+          {[1, 2, 3].map(() => (
+            <div class="h-24 bg-slate-900 border border-slate-800 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+      }>
         <Show when={projects()?.length > 0} fallback={
-          <div class="text-center py-12 text-slate-500 text-sm">
-            No compose projects registered.
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-8 text-center text-sm text-slate-500">
+            No compose projects registered. Add one to get started.
           </div>
         }>
-          <div class="space-y-3">
+          <div class="space-y-2">
             <For each={projects()}>
               {(proj: any) => (
-                <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition-colors">
-                  <div class="flex items-center justify-between mb-2">
+                <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors">
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="flex items-center gap-2">
-                      <span class={`inline-block w-2 h-2 rounded-full ${statusColor(proj.status)}`}></span>
-                      <h3 class="text-white font-medium text-sm">{proj.name}</h3>
+                      <span class={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${statusColor(proj.status)}`}></span>
+                      <h3 class="text-white text-sm font-medium">{proj.name}</h3>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1 flex-wrap">
                       <button onClick={() => doAction(proj.id, "up")}
                         disabled={actionLoading()[proj.id] === "up"}
-                        class="px-2 py-1 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-400 rounded text-xs disabled:opacity-50">Up</button>
+                        class="px-2 py-1 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-400 rounded text-xs border border-emerald-800/50 disabled:opacity-50">Up</button>
                       <button onClick={() => doAction(proj.id, "down")}
                         disabled={actionLoading()[proj.id] === "down"}
-                        class="px-2 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs disabled:opacity-50">Down</button>
+                        class="px-2 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs border border-red-800/50 disabled:opacity-50">Down</button>
                       <button onClick={() => doAction(proj.id, "restart")}
                         disabled={actionLoading()[proj.id] === "restart"}
                         class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs disabled:opacity-50">Restart</button>
@@ -106,12 +121,12 @@ export default function ComposePanel(props: { hostId: string }) {
                         class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">Edit</button>
                     </div>
                   </div>
-                  <p class="text-xs text-slate-500 font-mono">{proj.path}</p>
+                  <p class="text-xs text-slate-500 font-mono mt-1">{proj.path}</p>
                   <Show when={proj.services?.length > 0}>
                     <div class="flex gap-1 flex-wrap mt-2">
                       <For each={proj.services}>
                         {(svc: string) => (
-                          <span class="px-2 py-0.5 bg-slate-700 rounded-full text-xs text-slate-300">{svc}</span>
+                          <span class="px-2 py-0.5 bg-slate-800 rounded-full text-xs text-slate-300">{svc}</span>
                         )}
                       </For>
                     </div>
@@ -123,7 +138,7 @@ export default function ComposePanel(props: { hostId: string }) {
         </Show>
       </Show>
 
-      {/* File Editor Modal */}
+      {/* Editor Modal */}
       <Show when={showFile()}>
         <ComposeEditor
           hostId={props.hostId}
