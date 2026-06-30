@@ -91,6 +91,13 @@ async def create_host(request: Request):
         body = json.loads(request.body)
         data = DockerHostCreate(**body)
         user_id = UUID(_get_user_id(request))
+        
+        # Prevent duplicate — same host + port + username
+        existing = await _HOST_REPO.list()
+        for h in existing:
+            if h.host == data.host and h.port == data.port and h.username == data.username:
+                return json_response({"error": f"Host {data.host}:{data.port} already exists for user {data.username}"}, 409)
+        
         host = await _HOST_REPO.create(data, user_id)
         return json_response(host.model_dump(), 201)
     except Exception as e:
@@ -139,31 +146,45 @@ async def delete_host(request: Request):
 async def test_host_connection(request: Request):
     try:
         host_id = request.path_params.get("host_id")
-        service = _get_service(request, host_id)
-
-        # Test connection
+        decrypt_error = False
         try:
+            service = _get_service(request, host_id)
             result = await service.test_connection()
         except ValueError as ve:
-            # Decryption failed — likely key mismatch
-            return json_response({
-                "status": "offline",
-                "error": f"Decryption failed: {ve}. Password may be stored with an old encryption key. Please re-save this host with the current password to re-encrypt credentials.",
-                "decrypt_error": True
-            }, 200)
+            decrypt_error = True
+            result = {"status": "offline", "error": str(ve)}
         except Exception as ve:
-            return json_response({
-                "status": "offline",
-                "error": str(ve)
-            }, 200)
+            result = {"status": "offline", "error": str(ve)}
 
-        # Update last_connected if successful
-        if result.get("status") == "online":
+        if result.get("status") == "online" and not decrypt_error:
             await _HOST_REPO.update_last_connected(UUID(host_id))
 
         return json_response(result, 200)
     except Exception as e:
         return json_response({"error": str(e), "status": "offline"}, 500)
+
+
+async def test_credentials(request: Request):
+    """Test SSH credentials without creating a host."""
+    try:
+        body = json.loads(request.body)
+        from .crypto import CryptoService
+        crypto = CryptoService()
+        encrypted_password = crypto.encrypt(body.get("password", ""))
+        from .ssh_client import SSHClient
+        ssh = SSHClient(
+            host=body.get("host", ""),
+            port=int(body.get("port", 22)),
+            username=body.get("username", ""),
+            auth_type=body.get("auth_type", "password"),
+            password=encrypted_password,
+            ssh_key=body.get("ssh_key", ""),
+            ssh_key_passphrase=body.get("ssh_key_passphrase", ""),
+        )
+        result = await ssh.test_connection()
+        return json_response(result, 200)
+    except Exception as e:
+        return json_response({"status": "offline", "error": str(e)}, 200)
 
 
 # ═══════════════════════════════════════════════

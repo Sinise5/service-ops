@@ -30,6 +30,10 @@ export const dockerApi = {
       ? requestWithLogin(`/docker/hosts/${id}`, loginPassword, { method: "DELETE" })
       : request(`/docker/hosts/${id}`, { method: "DELETE" }),
   testHost: (id: string) => request(`/docker/hosts/${id}/test`, { method: "POST" }),
+  testCredentials: (data: any) => request("/docker/test-credentials", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
 
   // Containers
   listContainers: (hostId: string, all = true) => request(`/docker/hosts/${hostId}/containers?all=${all}`),

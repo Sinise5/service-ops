@@ -113,6 +113,7 @@ from .domains.topology.routes import (
 )
 from .domains.docker.routes import (
     list_hosts, create_host, get_host, update_host, delete_host, test_host_connection,
+    test_credentials,
     list_containers, container_inspect, container_stats, container_logs,
     container_start, container_stop, container_restart, container_remove,
     container_exec, container_replica, clone_container,
@@ -640,6 +641,11 @@ async def docker_delete_host(request: Request):
 @app.post("/docker/hosts/:host_id/test")
 async def docker_test_host(request: Request):
     return await test_host_connection(request)
+
+
+@app.post("/docker/test-credentials")
+async def docker_test_credentials(request: Request):
+    return await test_credentials(request)
 
 # Containers
 @app.get("/docker/hosts/:host_id/containers")

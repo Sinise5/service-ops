@@ -214,20 +214,20 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
     setTesting(true)
     setTestResult(null)
     try {
-      // First save, then test
       const data = {
         ...form(),
         tags: form().tags.split(",").map((t: string) => t.trim()).filter(Boolean),
       }
       if (props.host?.id) {
+        // Edit mode — save first then test via host id
         await dockerApi.updateHost(props.host.id, data)
+        const result = await dockerApi.testHost(props.host.id)
+        setTestResult(result)
       } else {
-        await dockerApi.createHost(data)
+        // New host — test credentials without creating
+        const result = await dockerApi.testCredentials(data)
+        setTestResult(result)
       }
-      const hosts = await dockerApi.listHosts()
-      const latest = hosts[hosts.length - 1]
-      const result = await dockerApi.testHost(latest.id)
-      setTestResult(result)
     } catch (e: any) {
       setTestResult({ status: "offline", error: e.message })
     }
