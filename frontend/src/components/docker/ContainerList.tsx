@@ -9,6 +9,7 @@ export default function ContainerList(props: { hostId: string }) {
   const [selected, setSelected] = createSignal<string | null>(null)
   const [showLogs, setShowLogs] = createSignal<string | null>(null)
   const [actionLoading, setActionLoading] = createSignal<Record<string, string>>({})
+  const [bulkSelected, setBulkSelected] = createSignal<Set<string>>(new Set())
 
   const [containers, { refetch }] = createResource(
     () => props.hostId,
@@ -54,6 +55,34 @@ export default function ContainerList(props: { hostId: string }) {
     await doAction(containerId, "remove")
   }
 
+  // Bulk actions
+  const toggleBulk = (id: string) => {
+    const s = new Set(bulkSelected())
+    if (s.has(id)) s.delete(id); else s.add(id)
+    setBulkSelected(s)
+  }
+
+  const toggleAll = () => {
+    if (bulkSelected().size === filtered().length) {
+      setBulkSelected(new Set())
+    } else {
+      setBulkSelected(new Set(filtered().map((c: any) => c.container_id)))
+    }
+  }
+
+  const bulkAction = async (action: string) => {
+    const ids = Array.from(bulkSelected())
+    if (!ids.length) return
+    if (!confirm(`${action} ${ids.length} container(s)?`)) return
+    try {
+      await dockerApi.bulkContainerAction(props.hostId, ids, action)
+      setBulkSelected(new Set())
+      refetch()
+    } catch (e: any) {
+      alert(e.message)
+    }
+  }
+
   return (
     <div class="space-y-4">
       {/* Toolbar */}
@@ -79,13 +108,26 @@ export default function ContainerList(props: { hostId: string }) {
               </button>
             ))}
           </div>
-        </div>
-        <div class="flex gap-2 mt-2 sm:mt-0">
           <button onClick={refetch}
             class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700">
             ⟳ Refresh
           </button>
         </div>
+
+        {/* Bulk actions bar */}
+        <Show when={bulkSelected().size > 0}>
+          <div class="mt-3 flex items-center gap-3 p-2 bg-blue-900/20 border border-blue-800 rounded-lg">
+            <span class="text-xs text-blue-300">{bulkSelected().size} selected</span>
+            <button onClick={() => bulkAction("start")}
+              class="px-2.5 py-1 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-400 rounded text-xs border border-emerald-800">▶ Start All</button>
+            <button onClick={() => bulkAction("stop")}
+              class="px-2.5 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs border border-red-800">⏹ Stop All</button>
+            <button onClick={() => bulkAction("restart")}
+              class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs border border-slate-600">🔄 Restart All</button>
+            <button onClick={() => setBulkSelected(new Set())}
+              class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs border border-slate-600 ml-auto">Clear</button>
+          </div>
+        </Show>
       </div>
 
       {/* Table */}
@@ -110,6 +152,10 @@ export default function ContainerList(props: { hostId: string }) {
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-slate-700 text-left text-xs text-slate-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 w-8">
+                    <input type="checkbox" checked={bulkSelected().size === filtered().length && filtered().length > 0}
+                      onChange={toggleAll} class="accent-blue-500" />
+                  </th>
                   <th class="px-4 py-3">Name</th>
                   <th class="px-4 py-3">Image</th>
                   <th class="px-4 py-3">Status</th>
@@ -121,6 +167,10 @@ export default function ContainerList(props: { hostId: string }) {
                 <For each={filtered()}>
                   {(c: any) => (
                     <tr class="hover:bg-slate-700/20 transition-colors group">
+                      <td class="px-4 py-3">
+                        <input type="checkbox" checked={bulkSelected().has(c.container_id)}
+                          onChange={() => toggleBulk(c.container_id)} class="accent-blue-500" />
+                      </td>
                       <td class="px-4 py-3 font-mono text-slate-200 text-xs">{c.name}</td>
                       <td class="px-4 py-3 text-slate-400 text-xs">{c.image}</td>
                       <td class="px-4 py-3">{statusBadge(c.state?.toLowerCase())}</td>

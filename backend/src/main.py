@@ -123,6 +123,7 @@ from .domains.docker.routes import (
     compose_read_file, compose_write_file, compose_config,
     deploy_container, list_templates, create_template, delete_template,
     save_container_logs, get_saved_logs,
+    system_prune, bulk_container_action,
 )
 from .domains.audit.routes import (
     get_audit_logs, get_user_activity,
@@ -696,6 +697,15 @@ async def docker_list_volumes(request: Request):
 @app.delete("/docker/hosts/:host_id/volumes/:volume_name")
 async def docker_remove_volume(request: Request):
     return await remove_volume(request)
+
+# System / Bulk
+@app.post("/docker/hosts/:host_id/prune")
+async def docker_system_prune(request: Request):
+    return await system_prune(request)
+
+@app.post("/docker/hosts/:host_id/containers/bulk")
+async def docker_bulk_container_action(request: Request):
+    return await bulk_container_action(request)
 
 # Compose
 @app.get("/docker/hosts/:host_id/compose/projects")

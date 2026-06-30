@@ -87,6 +87,14 @@ export const dockerApi = {
   createTemplate: (data: any) => request("/docker/templates", { method: "POST", body: JSON.stringify(data) }),
   deleteTemplate: (id: string) => request(`/docker/templates/${id}`, { method: "DELETE" }),
 
+  // System / Bulk
+  systemPrune: (hostId: string, target = "all") =>
+    request(`/docker/hosts/${hostId}/prune?target=${target}`, { method: "POST" }),
+  bulkContainerAction: (hostId: string, containerIds: string[], action: string) =>
+    request(`/docker/hosts/${hostId}/containers/bulk`, {
+      method: "POST", body: JSON.stringify({ container_ids: containerIds, action }),
+    }),
+
   // Saved logs
   getSavedLogs: (hostId: string, containerId: string, limit = 100) =>
     request(`/docker/hosts/${hostId}/containers/${containerId}/logs/saved?limit=${limit}`),

@@ -246,31 +246,31 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
 
   return (
     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={props.onClose}>
-      <div class="bg-slate-800 rounded-xl p-6 w-full max-w-lg border border-slate-700" onClick={(e) => e.stopPropagation()}>
-        <h2 class="text-lg font-semibold text-white mb-4">{props.host ? "Edit Host" : "Add Docker Host"}</h2>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <h2 class="text-lg font-semibold text-white mb-5">{props.host ? "Edit Host" : "Add Docker Host"}</h2>
 
-        <div class="space-y-3">
+        <div class="space-y-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Display Name</label>
             <input value={form().name} onInput={(e) => update("name", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="Production API Server" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="Production API Server" />
           </div>
           <div class="grid grid-cols-3 gap-3">
             <div class="col-span-2">
               <label class="block text-xs text-slate-400 mb-1">Host / IP</label>
               <input value={form().host} onInput={(e) => update("host", e.currentTarget.value)}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="192.168.1.10" />
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="192.168.1.10" />
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">SSH Port</label>
               <input type="number" value={form().port} onInput={(e) => update("port", parseInt(e.currentTarget.value))}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" />
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" />
             </div>
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Username</label>
             <input value={form().username} onInput={(e) => update("username", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="deploy" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="deploy" />
           </div>
 
           {/* Auth Type */}
@@ -294,7 +294,7 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
             <div>
               <label class="block text-xs text-slate-400 mb-1">Password</label>
               <input type="password" value={form().password} onInput={(e) => update("password", e.currentTarget.value)}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="••••••••" />
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="••••••••" />
             </div>
           </Show>
 
@@ -302,36 +302,36 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
             <div>
               <label class="block text-xs text-slate-400 mb-1">Private Key</label>
               <textarea value={form().ssh_key} onInput={(e) => update("ssh_key", e.currentTarget.value)}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs font-mono h-24"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-mono h-24"
                 placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..." />
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Key Passphrase (optional)</label>
               <input type="password" value={form().ssh_key_passphrase} onInput={(e) => update("ssh_key_passphrase", e.currentTarget.value)}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" />
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" />
             </div>
           </Show>
 
           <div>
             <label class="block text-xs text-slate-400 mb-1">Default Path</label>
             <input value={form().default_path} onInput={(e) => update("default_path", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="/opt/docker" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="/opt/docker" />
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Tags (comma-separated)</label>
             <input value={form().tags} onInput={(e) => update("tags", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="production, api, vps" />
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="production, api, vps" />
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Docker Context (optional)</label>
             <input value={form().docker_context} onInput={(e) => update("docker_context", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500"
               placeholder="Leave empty for default context" />
           </div>
         </div>
 
         <Show when={testResult()}>
-          <div class={`mt-3 p-3 rounded-lg text-sm ${testResult().status === "online" ? "bg-emerald-900/50 text-emerald-300" : "bg-red-900/50 text-red-300"}`}>
+          <div class={`mt-4 p-3 rounded-lg text-sm ${testResult().status === "online" ? "bg-emerald-900/50 border border-emerald-800 text-emerald-300" : "bg-red-900/50 border border-red-800 text-red-300"}`}>
             <strong>{testResult().status === "online" ? "✓ Online" : "✗ Offline"}</strong>
             {testResult().docker_version && <span> — Docker {testResult().docker_version}</span>}
             {testResult().error && <p class="mt-1 text-xs">{testResult().error}</p>}
@@ -339,16 +339,16 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
         </Show>
 
         <Show when={error()}>
-          <p class="mt-2 text-sm text-red-400">{error()}</p>
+          <p class="mt-3 text-sm text-red-400 bg-red-900/30 border border-red-800 rounded px-3 py-2">{error()}</p>
         </Show>
 
         <div class="flex justify-between mt-5">
           <button onClick={testConnection} disabled={testing()}
-            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">
+            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm border border-slate-600">
             {testing() ? "Testing..." : "Test Connection"}
           </button>
           <div class="flex gap-2">
-            <button onClick={props.onClose} class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">Cancel</button>
+            <button onClick={props.onClose} class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm border border-slate-600">Cancel</button>
             <button onClick={handleSave} disabled={saving()}
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
               {saving() ? "Saving..." : "Save Host"}
@@ -413,17 +413,17 @@ function DeployFormModal(props: { hostId: string; onClose: () => void; onDeploye
 
   return (
     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={props.onClose}>
-      <div class="bg-slate-800 rounded-xl p-6 w-full max-w-xl border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <h2 class="text-lg font-semibold text-white mb-4">Deploy Container</h2>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <h2 class="text-lg font-semibold text-white mb-5">Deploy Container</h2>
 
         <Show when={templates()?.length}>
-          <div class="mb-4">
-            <label class="block text-xs text-slate-400 mb-1">Quick Template</label>
+          <div class="mb-5">
+            <label class="block text-xs text-slate-400 mb-2">Quick Template</label>
             <div class="flex flex-wrap gap-2">
               <For each={templates()?.filter((t: any) => t.is_system)}>
                 {(t: any) => (
                   <button onClick={() => applyTemplate(t)}
-                    class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-full text-xs">
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg text-xs border border-slate-700">
                     {t.name}
                   </button>
                 )}
@@ -432,155 +432,161 @@ function DeployFormModal(props: { hostId: string; onClose: () => void; onDeploye
           </div>
         </Show>
 
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Image *</label>
-            <input value={form().image} onInput={(e) => update("image", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="nginx:alpine" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Container Name *</label>
-            <input value={form().container_name} onInput={(e) => update("container_name", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" placeholder="my-nginx" />
-          </div>
-
-          {/* Ports */}
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs text-slate-400">Port Mappings</label>
-              <button onClick={() => setPorts([...ports(), { host: 8080, container: 80 }])}
-                class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
-            </div>
-            <For each={ports()}>
-              {(p, i) => (
-                <div class="flex gap-2 mb-1">
-                  <input type="number" value={p.host} onInput={(e) => {
-                    const copy = [...ports()]; copy[i()].host = parseInt(e.currentTarget.value); setPorts(copy)
-                  }}
-                    class="w-28 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="8080" />
-                  <span class="text-slate-500 text-xs self-center">→</span>
-                  <input type="number" value={p.container} onInput={(e) => {
-                    const copy = [...ports()]; copy[i()].container = parseInt(e.currentTarget.value); setPorts(copy)
-                  }}
-                    class="w-28 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="80" />
-                  <button onClick={() => setPorts(ports().filter((_, j) => j !== i()))}
-                    class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Image *</label>
+                <input value={form().image} onInput={(e) => update("image", e.currentTarget.value)}
+                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="nginx:alpine" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Container Name *</label>
+                <input value={form().container_name} onInput={(e) => update("container_name", e.currentTarget.value)}
+                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" placeholder="my-nginx" />
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="col-span-2">
+                  <label class="block text-xs text-slate-400 mb-1">Restart Policy</label>
+                  <select value={form().restart_policy} onChange={(e) => update("restart_policy", e.currentTarget.value)}
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-white text-xs">
+                    <option value="no">no</option>
+                    <option value="always">always</option>
+                    <option value="unless-stopped">unless-stopped</option>
+                    <option value="on-failure">on-failure</option>
+                  </select>
                 </div>
-              )}
-            </For>
-          </div>
-
-          {/* Env vars */}
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs text-slate-400">Environment Variables</label>
-              <button onClick={() => setEnvs([...envs(), { key: "", value: "" }])}
-                class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
+              </div>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-1.5 text-xs text-slate-300">
+                  <input type="checkbox" checked={form().privileged}
+                    onChange={(e) => update("privileged", e.currentTarget.checked)}
+                    class="accent-blue-500" /> Privileged
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-300">
+                  <input type="checkbox" checked={form().tty}
+                    onChange={(e) => update("tty", e.currentTarget.checked)}
+                    class="accent-blue-500" /> TTY
+                </label>
+              </div>
             </div>
-            <For each={envs()}>
-              {(e, i) => (
-                <div class="flex gap-1 mb-1">
-                  <input value={e.key} onInput={(ev) => {
-                    const copy = [...envs()]; copy[i()].key = ev.currentTarget.value; setEnvs(copy)
-                  }}
-                    class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="KEY" />
-                  <input value={e.value} onInput={(ev) => {
-                    const copy = [...envs()]; copy[i()].value = ev.currentTarget.value; setEnvs(copy)
-                  }}
-                    class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="value" />
-                  <button onClick={() => setEnvs(envs().filter((_, j) => j !== i()))}
-                    class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
+
+            <div class="space-y-3">
+              {/* Ports */}
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs text-slate-400">Port Mappings</label>
+                  <button onClick={() => setPorts([...ports(), { host: 8080, container: 80 }])}
+                    class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
                 </div>
-              )}
-            </For>
-          </div>
-
-          {/* Volumes */}
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs text-slate-400">Volume Mounts</label>
-              <button onClick={() => setVolumes([...volumes(), { host: "", container: "", readOnly: false }])}
-                class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
-            </div>
-            <For each={volumes()}>
-              {(v, i) => (
-                <div class="flex gap-1 mb-1 items-center">
-                  <input value={v.host} onInput={(ev) => {
-                    const copy = [...volumes()]; copy[i()].host = ev.currentTarget.value; setVolumes(copy)
-                  }}
-                    class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="/data" />
-                  <span class="text-slate-500 text-xs">→</span>
-                  <input value={v.container} onInput={(ev) => {
-                    const copy = [...volumes()]; copy[i()].container = ev.currentTarget.value; setVolumes(copy)
-                  }}
-                    class="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs" placeholder="/app/data" />
-                  <label class="text-xs text-slate-400 flex items-center gap-1">
-                    <input type="checkbox" checked={v.readOnly}
-                      onChange={(ev) => {
-                        const copy = [...volumes()]; copy[i()].readOnly = ev.currentTarget.checked; setVolumes(copy)
+                <For each={ports()}>
+                  {(p, i) => (
+                    <div class="flex gap-1 mb-1 items-center">
+                      <input type="number" value={p.host} onInput={(e) => {
+                        const copy = [...ports()]; copy[i()].host = parseInt(e.currentTarget.value); setPorts(copy)
                       }}
-                      class="accent-blue-500" />
-                    RO
-                  </label>
-                  <button onClick={() => setVolumes(volumes().filter((_, j) => j !== i()))}
-                    class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
-                </div>
-              )}
-            </For>
-          </div>
+                        class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="8080" />
+                      <span class="text-slate-500 text-xs">→</span>
+                      <input type="number" value={p.container} onInput={(e) => {
+                        const copy = [...ports()]; copy[i()].container = parseInt(e.currentTarget.value); setPorts(copy)
+                      }}
+                        class="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="80" />
+                      <button onClick={() => setPorts(ports().filter((_, j) => j !== i()))}
+                        class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
+                    </div>
+                  )}
+                </For>
+              </div>
 
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">Restart Policy</label>
-              <select value={form().restart_policy} onChange={(e) => update("restart_policy", e.currentTarget.value)}
-                class="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-2 text-white text-xs">
-                <option value="no">no</option>
-                <option value="always">always</option>
-                <option value="unless-stopped">unless-stopped</option>
-                <option value="on-failure">on-failure</option>
-              </select>
-            </div>
-            <div class="flex items-center gap-4 pt-4">
-              <label class="flex items-center gap-1 text-xs text-slate-300">
-                <input type="checkbox" checked={form().privileged}
-                  onChange={(e) => update("privileged", e.currentTarget.checked)}
-                  class="accent-blue-500" /> Privileged
-              </label>
-              <label class="flex items-center gap-1 text-xs text-slate-300">
-                <input type="checkbox" checked={form().tty}
-                  onChange={(e) => update("tty", e.currentTarget.checked)}
-                  class="accent-blue-500" /> TTY
-              </label>
+              {/* Env vars */}
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs text-slate-400">Env Vars</label>
+                  <button onClick={() => setEnvs([...envs(), { key: "", value: "" }])}
+                    class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
+                </div>
+                <For each={envs()}>
+                  {(e, i) => (
+                    <div class="flex gap-1 mb-1">
+                      <input value={e.key} onInput={(ev) => {
+                        const copy = [...envs()]; copy[i()].key = ev.currentTarget.value; setEnvs(copy)
+                      }}
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="KEY" />
+                      <input value={e.value} onInput={(ev) => {
+                        const copy = [...envs()]; copy[i()].value = ev.currentTarget.value; setEnvs(copy)
+                      }}
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="value" />
+                      <button onClick={() => setEnvs(envs().filter((_, j) => j !== i()))}
+                        class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
+                    </div>
+                  )}
+                </For>
+              </div>
+
+              {/* Volumes */}
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs text-slate-400">Volumes</label>
+                  <button onClick={() => setVolumes([...volumes(), { host: "", container: "", readOnly: false }])}
+                    class="text-xs text-blue-400 hover:text-blue-300">+ Add</button>
+                </div>
+                <For each={volumes()}>
+                  {(v, i) => (
+                    <div class="flex gap-1 mb-1 items-center">
+                      <input value={v.host} onInput={(ev) => {
+                        const copy = [...volumes()]; copy[i()].host = ev.currentTarget.value; setVolumes(copy)
+                      }}
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="/data" />
+                      <span class="text-slate-500 text-xs">→</span>
+                      <input value={v.container} onInput={(ev) => {
+                        const copy = [...volumes()]; copy[i()].container = ev.currentTarget.value; setVolumes(copy)
+                      }}
+                        class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-xs" placeholder="/app/data" />
+                      <label class="text-xs text-slate-500 flex items-center gap-1">
+                        <input type="checkbox" checked={v.readOnly}
+                          onChange={(ev) => {
+                            const copy = [...volumes()]; copy[i()].readOnly = ev.currentTarget.checked; setVolumes(copy)
+                          }}
+                          class="accent-blue-500" /> RO
+                      </label>
+                      <button onClick={() => setVolumes(volumes().filter((_, j) => j !== i()))}
+                        class="text-red-400 hover:text-red-300 text-xs px-1">✕</button>
+                    </div>
+                  )}
+                </For>
+              </div>
             </div>
           </div>
 
           <div>
             <label class="block text-xs text-slate-400 mb-1">Command (optional)</label>
             <input value={form().command} onInput={(e) => update("command", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs font-mono"
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-mono"
               placeholder="sh -c 'node server.js'" />
           </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Workdir (optional)</label>
-            <input value={form().workdir} onInput={(e) => update("workdir", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs" placeholder="/app" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Network (optional)</label>
-            <input value={form().network} onInput={(e) => update("network", e.currentTarget.value)}
-              class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-xs"
-              placeholder="host, bridge, or custom network name" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Workdir (optional)</label>
+              <input value={form().workdir} onInput={(e) => update("workdir", e.currentTarget.value)}
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs" placeholder="/app" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Network (optional)</label>
+              <input value={form().network} onInput={(e) => update("network", e.currentTarget.value)}
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
+                placeholder="host, bridge, or network name" />
+            </div>
           </div>
         </div>
 
         <Show when={error()}>
-          <p class="mt-3 text-sm text-red-400">{error()}</p>
+          <p class="mt-4 text-sm text-red-400 bg-red-900/30 border border-red-800 rounded px-3 py-2">{error()}</p>
         </Show>
 
         <div class="flex justify-end gap-2 mt-5">
-          <button onClick={props.onClose} class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">Cancel</button>
+          <button onClick={props.onClose} class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm border border-slate-600">Cancel</button>
           <button onClick={handleDeploy} disabled={deploying() || !form().image || !form().container_name}
-            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
             {deploying() ? "Deploying..." : "Deploy & Start"}
           </button>
         </div>

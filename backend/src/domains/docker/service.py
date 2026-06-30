@@ -441,6 +441,33 @@ class DockerService:
         except Exception:
             return {"total": 0, "running": 0}
 
+    # ─── System Operations ─────────────────────────
+    async def system_prune(self, target: str = "all") -> dict:
+        """Prune docker system: containers, images, volumes, networks.
+        target: all | containers | images | volumes | networks
+        """
+        cmd_map = {
+            "all": "docker system prune -af",
+            "containers": "docker container prune -f",
+            "images": "docker image prune -af",
+            "volumes": "docker volume prune -f",
+            "networks": "docker network prune -f",
+        }
+        cmd = cmd_map.get(target, cmd_map["all"])
+        stdout, stderr, code = await self._run(cmd, timeout=120)
+        return {"target": target, "output": (stdout + stderr).strip(), "code": code}
+
+    async def bulk_container_action(self, container_ids: list[str], action: str) -> dict:
+        """Perform action (start|stop|restart) on multiple containers."""
+        results = {}
+        for cid in container_ids:
+            try:
+                result = await self.container_action(cid, action)
+                results[cid] = {"success": True, "message": result.get("message", "")}
+            except Exception as e:
+                results[cid] = {"success": False, "error": str(e)}
+        return results
+
     # ─── Connection Test ─────────────────────────
     async def test_connection(self) -> dict:
         ssh = await self._get_ssh_client()

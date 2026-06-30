@@ -42,19 +42,19 @@ export default function ComposeEditor(props: {
 
   return (
     <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={props.onClose}>
-      <div class="bg-slate-800 rounded-xl w-full max-w-4xl max-h-[85vh] border border-slate-700 flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-4xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <div>
             <h2 class="text-white font-semibold text-sm">Edit docker-compose.yml</h2>
             <p class="text-xs text-slate-500 font-mono">{props.project.path}</p>
           </div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-center">
             <Show when={error()}>
-              <span class="text-xs text-red-400 self-center">{error()}</span>
+              <span class="text-xs text-red-400">{error()}</span>
             </Show>
-            <button onClick={props.onClose} class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">Cancel</button>
+            <button onClick={props.onClose} class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs border border-slate-600">Cancel</button>
             <button onClick={handleSave} disabled={saving()}
-              class="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium disabled:opacity-50">
+              class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium">
               {saving() ? "Saving..." : "Save (Ctrl+S)"}
             </button>
           </div>

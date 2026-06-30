@@ -7,8 +7,22 @@ export default function ImageList(props: { hostId: string }) {
   const [pullImage, setPullImage] = createSignal("")
   const [pullError, setPullError] = createSignal("")
   const [actionLoading, setActionLoading] = createSignal<Record<string, boolean>>({})
+  const [pruning, setPruning] = createSignal(false)
 
   const [images, { refetch }] = createResource(() => props.hostId, (id) => dockerApi.listImages(id))
+
+  const pruneImages = async () => {
+    if (!confirm("Prune unused images? This removes dangling/unused images.")) return
+    setPruning(true)
+    try {
+      const result = await dockerApi.systemPrune(props.hostId, "images")
+      alert(result.output || "Prune complete")
+      refetch()
+    } catch (e: any) {
+      alert(e.message)
+    }
+    setPruning(false)
+  }
 
   const filtered = () => {
     const q = search().toLowerCase()
@@ -68,6 +82,9 @@ export default function ImageList(props: { hostId: string }) {
       {/* Search + refresh */}
       <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <span class="text-xs text-slate-400 font-medium">
+            {(images() || []).length} image{(images() || []).length !== 1 ? "s" : ""}
+          </span>
           <input
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
@@ -77,6 +94,10 @@ export default function ImageList(props: { hostId: string }) {
           <button onClick={refetch}
             class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 whitespace-nowrap">
             ⟳ Refresh
+          </button>
+          <button onClick={pruneImages} disabled={pruning()}
+            class="px-3 py-1.5 bg-orange-900/30 hover:bg-orange-800/50 text-orange-400 rounded-lg text-xs border border-orange-800 whitespace-nowrap disabled:opacity-50">
+            {pruning() ? "..." : "🧹 Prune"}
           </button>
         </div>
       </div>

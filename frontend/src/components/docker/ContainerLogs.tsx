@@ -27,9 +27,9 @@ export default function ContainerLogs(props: { hostId: string; containerId: stri
 
   return (
     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={props.onClose}>
-      <div class="bg-slate-800 rounded-xl w-full max-w-4xl max-h-[80vh] border border-slate-700 flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-4xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-800/30">
           <div class="flex items-center gap-3">
             <h2 class="text-white font-semibold text-sm">Logs</h2>
             <span class="text-xs text-slate-500 font-mono">{props.containerId.slice(0, 12)}</span>
@@ -38,7 +38,7 @@ export default function ContainerLogs(props: { hostId: string; containerId: stri
             <select
               value={tail()}
               onChange={(e) => { setTail(parseInt(e.currentTarget.value)); fetchLogs(parseInt(e.currentTarget.value)) }}
-              class="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white"
+              class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white"
             >
               <option value="50">tail 50</option>
               <option value="100">tail 100</option>

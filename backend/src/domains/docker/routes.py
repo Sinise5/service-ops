@@ -17,7 +17,7 @@ from ...utils import json_response, get_header
 from ...config import settings
 
 
-_HOST_REPO = DockerHostRepository()
+_HOST_REPO = DockerHostRepository(crypto_service=_CRYPTO)
 _COMPOSE_REPO = ComposeProjectRepository()
 _TEMPLATE_REPO = DeployTemplateRepository()
 _LOG_REPO = ContainerLogRepository()
@@ -30,8 +30,15 @@ def _get_service(request: Request, host_id: str) -> DockerService:
 
 
 def _get_user_id(request: Request) -> str:
-    """Extract user ID from auth middleware."""
-    return getattr(request, "user_id", None) or "system"
+    """Extract user ID from auth middleware. Return a valid UUID hex string."""
+    uid = getattr(request, "user_id", None)
+    if uid:
+        # uid may already be a UUID; try to convert
+        try:
+            return str(UUID(str(uid)))
+        except ValueError:
+            pass
+    return "00000000-0000-0000-0000-000000000000"  # system / nil UUID
 
 
 # ═══════════════════════════════════════════════
@@ -94,7 +101,20 @@ async def test_host_connection(request: Request):
         service = _get_service(request, host_id)
 
         # Test connection
-        result = await service.test_connection()
+        try:
+            result = await service.test_connection()
+        except ValueError as ve:
+            # Decryption failed — likely key mismatch
+            return json_response({
+                "status": "offline",
+                "error": f"Decryption failed: {ve}. Password may be stored with an old encryption key. Please re-save this host with the current password to re-encrypt credentials.",
+                "decrypt_error": True
+            }, 200)
+        except Exception as ve:
+            return json_response({
+                "status": "offline",
+                "error": str(ve)
+            }, 200)
 
         # Update last_connected if successful
         if result.get("status") == "online":
@@ -438,6 +458,38 @@ async def compose_config(request: Request):
         service = _get_service(request, host_id)
         config = await service.compose_config(project.path)
         return json_response({"config": config}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
+# ═══════════════════════════════════════════════
+#  SYSTEM OPERATIONS
+# ═══════════════════════════════════════════════
+
+async def system_prune(request: Request):
+    """Prune Docker system on a host."""
+    try:
+        host_id = request.path_params.get("host_id")
+        target = request.query_params.get("target", "all")
+        service = _get_service(request, host_id)
+        result = await service.system_prune(target)
+        return json_response(result, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
+async def bulk_container_action(request: Request):
+    """Start/stop/restart multiple containers at once."""
+    try:
+        host_id = request.path_params.get("host_id")
+        body = json.loads(request.body)
+        container_ids = body.get("container_ids", [])
+        action = body.get("action", "")
+        if not container_ids or action not in ("start", "stop", "restart"):
+            return json_response({"error": "container_ids and action (start|stop|restart) required"}, 400)
+        service = _get_service(request, host_id)
+        results = await service.bulk_container_action(container_ids, action)
+        return json_response(results, 200)
     except Exception as e:
         return json_response({"error": str(e)}, 500)
 

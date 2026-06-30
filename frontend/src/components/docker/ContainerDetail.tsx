@@ -35,7 +35,7 @@ export default function ContainerDetail(props: { hostId: string; containerId: st
 
   return (
     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={props.onClose}>
-      <div class="bg-slate-800 rounded-xl w-full max-w-2xl max-h-[85vh] border border-slate-700 flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-2xl max-h-[85vh] border-slate-800 flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700">
           <div>
@@ -51,7 +51,7 @@ export default function ContainerDetail(props: { hostId: string; containerId: st
         </div>
 
         {/* Stats mini bar */}
-        <div class="px-5 py-2 bg-slate-800 border-b border-slate-700 flex gap-6 text-xs">
+        <div class="px-5 py-2 bg-slate-800/50 border-b border-slate-700 flex gap-6 text-xs">
           <Show when={stats()}>
             <div><span class="text-slate-500">CPU</span> <span class="text-white ml-1">{stats().cpu_percent?.toFixed(1)}%</span></div>
             <div><span class="text-slate-500">Memory</span> <span class="text-white ml-1">{stats().mem_percent?.toFixed(1)}%</span></div>
