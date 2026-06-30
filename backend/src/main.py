@@ -6,12 +6,13 @@ from .database import db
 from .redis_client import redis_client
 from .config import settings
 from .shared import get_header, json_response
+from .utils import UUIDEncoder
 
 app = Robyn(__file__)
 
 # CORS helper
 def cors_response(data, status_code=200):
-    """Return Response with CORS headers"""
+    """Return Response with CORS headers + datetime/UUID serialization"""
     headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -19,10 +20,11 @@ def cors_response(data, status_code=200):
         "Content-Type": "application/json"
     }
     import json as _json
+    body = _json.dumps(data, cls=UUIDEncoder)
     return Response(
         status_code=status_code,
         headers=headers,
-        description=_json.dumps(data)
+        description=body
     )
 
 # CORS OPTIONS handler
@@ -191,7 +193,6 @@ async def get_me(request: Request):
         token = auth_header[7:]
         user_id = auth_service.verify_token(token)
         user = await auth_service.user_repo.get_by_id(UUID(str(user_id)))
-        # Convert datetime + UUID fields to ISO/string
         if user:
             for k, v in user.items():
                 if isinstance(v, UUID):
