@@ -1,7 +1,7 @@
 import { apiFetch } from '../lib/api'
 
-// API base — use /api prefix through vite/nginx proxy
-const BASE = '/api'
+// API base — apiFetch already prepends /api via API_BASE_URL
+const BASE = ''
 
 async function request(path: string, options: RequestInit = {}) {
   const res = await apiFetch(`${BASE}${path}`, options)
