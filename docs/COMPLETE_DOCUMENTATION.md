@@ -1,7 +1,7 @@
 # ServiceOps Platform — Complete Documentation
 
-**Version:** 1.0.0 | **Status:** Production Ready | **Last Updated:** June 2026  
-**Stack:** FastAPI (Python) + SolidJS (TypeScript) + PostgreSQL + Redis + Docker
+**Version:** 1.0.0 | **Status:** Production Ready | **Last Updated:** 30 June 2026  
+**Stack:** Robyn (Python) + SolidJS (TypeScript) + PostgreSQL + Redis + Docker
 
 ---
 
@@ -48,7 +48,7 @@ ServiceOps is a production-ready IT operations platform providing:
 | Topology | ✅ Complete | Visual dependency graph |
 | Logs | ✅ Complete | Searchable log ingestion |
 | Auth | ✅ Complete | JWT login + protected routes |
-| Docker | ✅ Complete | Multi-container deployment |
+| Docker Management | ✅ Complete | Multi-host Docker via SSH — containers, images, volumes, Compose |
 | CSV Import | ✅ Complete | Bulk asset import |
 
 ---
@@ -62,7 +62,7 @@ ServiceOps is a production-ready IT operations platform providing:
 │                   Frontend (SolidJS)                │
 │              http://localhost:5173                   │
 ├─────────────────────────────────────────────────────┤
-│                   Backend (FastAPI)                  │
+│                   Backend (Robyn)                  │
 │              http://localhost:9080                    │
 ├─────────────────────────────────────────────────────┤
 │   PostgreSQL (persistence)    │    Redis (caching)   │
@@ -77,7 +77,7 @@ ServiceOps is a production-ready IT operations platform providing:
 serviceops/
 ├── backend/
 │   ├── src/
-│   │   ├── main.py              # FastAPI application entry
+│   │   ├── main.py              # Robyn application entry
 │   │   ├── config.py            # Configuration management
 │   │   ├── database.py          # PostgreSQL connection
 │   │   ├── seed.py              # Database seeding
@@ -89,7 +89,8 @@ serviceops/
 │   │   │   ├── notifications/   # Notification channels
 │   │   │   ├── sla/             # SLA tracking
 │   │   │   ├── topology/        # Dependency mapping
-│   │   │   └── logs/            # Log ingestion
+│   │   │   ├── logs/            # Log ingestion
+│   │   │   └── docker/          # Docker management (SSH + Docker CLI)
 │   │   └── shared/              # Shared utilities
 │   ├── tests/                   # Test files
 │   └── requirements.txt         # Python dependencies
@@ -130,6 +131,11 @@ serviceops/
 - `sla_reports` — Generated reports
 - `dependencies` — Topology edges
 - `logs` — Centralized log storage
+
+**Docker Tables (Phase 15):**
+- `docker_hosts` — Remote VM SSH credentials (encrypted)
+- `docker_container_cache` — Cached container list per host
+- `docker_compose_projects` — Tracked compose projects per host
 
 ---
 

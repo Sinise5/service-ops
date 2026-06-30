@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show, onCleanup } from "solid-js"
+import { createSignal, createEffect, onCleanup, For, Show } from "solid-js"
 import { dockerApi } from "../../api/docker-api"
 
 export default function ContainerLogs(props: { hostId: string; containerId: string; onClose: () => void }) {
@@ -6,24 +6,58 @@ export default function ContainerLogs(props: { hostId: string; containerId: stri
   const [logs, setLogs] = createSignal<string[]>([])
   const [autoScroll, setAutoScroll] = createSignal(true)
   const [streaming, setStreaming] = createSignal(false)
+  const [logError, setLogError] = createSignal("")
   let logContainer: HTMLDivElement | undefined
-  let abortController: AbortEventSource | undefined
+  let streamController: ReturnType<typeof setInterval> | null = null
 
-  const fetchLogs = async (n: number) => {
+  const fetchLogs = async (n: number, append = false) => {
+    setLogError("")
     try {
       const result = await dockerApi.containerLogs(props.hostId, props.containerId, n)
-      setLogs(result.split("\n").filter(Boolean))
-    } catch {}
-  }
-
-  createResource(() => props.containerId, () => fetchLogs(tail()))
-
-  // Auto-scroll
-  const scrollToBottom = () => {
-    if (autoScroll() && logContainer) {
-      logContainer.scrollTop = logContainer.scrollHeight
+      // Backend returns {logs: "..."} or plain string
+      const raw = typeof result === 'string' ? result : (result?.logs ?? JSON.stringify(result))
+      const lines = raw.split("\n").filter(Boolean)
+      setLogs(append ? (prev) => [...prev.slice(-500), ...lines] : lines)
+    } catch (err: any) {
+      setLogError(err.message || "Failed to fetch logs")
     }
   }
+
+  // Polling-based follow (like docker logs -f)
+  const startStream = () => {
+    if (streamController) return
+    setStreaming(true)
+    fetchLogs(tail(), false)  // initial load
+    streamController = setInterval(() => {
+      fetchLogs(tail(), true)
+    }, 3000)
+  }
+
+  const stopStream = () => {
+    if (streamController) {
+      clearInterval(streamController)
+      streamController = null
+    }
+    setStreaming(false)
+  }
+
+  onCleanup(() => stopStream())
+
+  // Fetch on mount and when containerId/tail changes
+  createEffect(() => {
+    const _ = props.containerId  // track
+    fetchLogs(tail())
+  })
+
+  // Auto-scroll — fires after every render via effect
+  createEffect(() => {
+    const lines = logs()
+    if (autoScroll() && logContainer && lines.length) {
+      queueMicrotask(() => {
+        logContainer!.scrollTop = logContainer!.scrollHeight
+      })
+    }
+  })
 
   return (
     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={props.onClose}>
@@ -64,6 +98,14 @@ export default function ContainerLogs(props: { hostId: string; containerId: stri
               class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">↓ Download</button>
             <button onClick={() => fetchLogs(tail())}
               class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">⟳</button>
+            <Show when={!streaming()}>
+              <button onClick={() => startStream()}
+                class="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded text-xs font-medium">▶ Follow</button>
+            </Show>
+            <Show when={streaming()}>
+              <button onClick={() => stopStream()}
+                class="px-2 py-1 bg-red-700 hover:bg-red-600 text-white rounded text-xs font-medium">■ Stop</button>
+            </Show>
             <button onClick={props.onClose} class="text-slate-400 hover:text-white text-lg">✕</button>
           </div>
         </div>
@@ -76,18 +118,23 @@ export default function ContainerLogs(props: { hostId: string; containerId: stri
               if (!atBottom) setAutoScroll(false)
             }
           }}>
-          <Show when={logs().length === 0}>
-            <p class="text-slate-500">No logs available.</p>
+          <Show when={logError()}>
+            <p class="text-red-400">❌ {logError()}</p>
           </Show>
-          <For each={logs()}>
-            {(line: string) => (
-              <div class={line.includes("ERROR") || line.includes("error") ? "text-red-400" :
-                          line.includes("WARN") || line.includes("warn") ? "text-yellow-400" :
-                          "text-slate-300 whitespace-pre-wrap break-all"}>
-                {line}
-              </div>
-            )}
-          </For>
+          <Show when={!logError() && logs().length === 0}>
+            <p class="text-slate-500">Loading logs...</p>
+          </Show>
+          <Show when={!logError() && logs().length > 0}>
+            <For each={logs()}>
+              {(line: string) => (
+                <div class={line.includes("ERROR") || line.includes("error") ? "text-red-400" :
+                            line.includes("WARN") || line.includes("warn") ? "text-yellow-400" :
+                            "text-slate-300 whitespace-pre-wrap break-all"}>
+                  {line}
+                </div>
+              )}
+            </For>
+          </Show>
         </div>
       </div>
     </div>

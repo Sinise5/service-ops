@@ -96,8 +96,13 @@ export default function HelpPage() {
           link: "MONITORING_GUIDE.md"
         },
         {
-          heading: "Alert Rules Guide",
-          text: "Single-condition vs multi-condition rules, flexible operators (>, <, ==, !=), AND/OR logic, examples, API reference.",
+          heading: "Docker Management",
+          text: "Remote VM Docker management via SSH — containers, images, volumes, Compose projects. Multi-host, credential encryption, live logs.",
+          link: "DOCKER_MANAGEMENT_GUIDE.md"
+        },
+        {
+          heading: "Alert Rules",
+          text: "Single and multi-condition alert rules with AND/OR logic. Operators: >, <, ==, !=, >=, <=. Fields: response_time_ms, status, output.",
           link: "ALERT_RULES_GUIDE.md"
         }
       ]
@@ -169,6 +174,51 @@ export default function HelpPage() {
         {
           heading: "View Reports",
           text: "Shows current uptime %, downtime minutes, vs target (pass/fail)."
+        }
+      ]
+    },
+    {
+      id: "docker",
+      title: "🐳 Docker Management",
+      content: [
+        {
+          heading: "What is Docker Management?",
+          text: "Manage Docker containers, images, volumes, and Compose projects on remote VMs directly from ServiceOps. Operations run via SSH to the target VM."
+        },
+        {
+          heading: "Add Docker Host",
+          steps: [
+            "Go to Docker page",
+            "Click + Add Host",
+            "Enter VM IP/hostname, SSH username, password or SSH key",
+            "Click Test Connection to verify",
+            "Save"
+          ]
+        },
+        {
+          heading: "Authentication",
+          text: "SSH Password (recommended) or SSH Key (for passwordless auth).\n\nPasswords are encrypted with Fernet AES-128 before storing in database."
+        },
+        {
+          heading: "Container Actions",
+          text: "Start • Stop • Restart • Remove\n\nFilter: All / Running / Stopped\n\nView live logs per container."
+        },
+        {
+          heading: "Image Management",
+          text: "Pull images from Docker registry.\nBulk delete unused images (requires SSH password)."
+        },
+        {
+          heading: "Docker Compose",
+          text: "Add compose project path → detect services automatically.\n\nActions: Up • Down • Restart • Scale replicas • Edit docker-compose.yml"
+        },
+        {
+          heading: "Security",
+          text: "Delete host: requires your ServiceOps login password (bcrypt verified).\n\nDelete container/image: requires SSH password of that host.\n\nThis ensures only users with VM access can delete Docker resources."
+        },
+        {
+          heading: "View Full Guide",
+          text: "See DOCKER_MANAGEMENT_GUIDE.md for complete setup, API reference, and troubleshooting.",
+          link: "DOCKER_MANAGEMENT_GUIDE.md"
         }
       ]
     },
@@ -276,6 +326,14 @@ export default function HelpPage() {
           <a href="#notifications" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 border-orange-500">
             <div class="text-2xl mb-2">💬</div>
             <div class="font-semibold text-slate-900">Notifications</div>
+          </a>
+          <a href="#sla" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 border-amber-500">
+            <div class="text-2xl mb-2">📈</div>
+            <div class="font-semibold text-slate-900">SLA</div>
+          </a>
+          <a href="#docker" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 border-sky-500">
+            <div class="text-2xl mb-2">🐳</div>
+            <div class="font-semibold text-slate-900">Docker</div>
           </a>
         </div>
 

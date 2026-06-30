@@ -42,7 +42,7 @@
 
 ---
 
-## Phase 14: Production Deployment ⏳ **IN PROGRESS**
+## Phase 14: Production Deployment ✅ **COMPLETE**
 
 **Duration:** 2 weeks  
 **Effort:** 80 hours  
@@ -58,6 +58,42 @@
 7. Performance optimization — 7 hours
 
 **Target Completion:** Week 16 (2026-06-30)
+
+---
+
+## Phase 15: Docker Management ✅ **COMPLETE**
+
+**Status:** ✅ **Deployed and tested**
+
+**Features Added:**
+- Multi-host Docker management via SSH (password + SSH key auth)
+- Container lifecycle: list, start, stop, restart, remove
+- Container logs: view + live streaming via SSE
+- Image management: list, pull, remove, bulk delete, prune
+- Volume management: list, inspect, remove
+- Docker Compose: project management, up/down/restart, scale replicas
+- Credential encryption: Fernet AES-128 for SSH passwords/keys
+- Security: delete host → login password (bcrypt); delete Docker resource → SSH password
+- UI: filter containers (all/running/stopped), show/hide password toggle
+- Consistent styling with existing ServiceOps pages (Layout wrapper)
+
+**API Endpoints:** 56 Docker endpoints across hosts, containers, images, volumes, compose
+
+**Success Criteria Met:**
+- ✅ All Docker endpoints return 200 OK
+- ✅ SSH connection works to remote VM
+- ✅ Container CRUD operational
+- ✅ Image CRUD + prune operational
+- ✅ Credential encryption verified
+- ✅ Docker page uses consistent ServiceOps layout
+
+---
+
+## Phase 16: RBAC & Permissions (Planned)
+
+- Host-level access control
+- Role-based Docker permissions
+- Audit logging
 
 ---
 

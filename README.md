@@ -11,6 +11,8 @@ Production-ready observability and CMDB platform — Datadog/New Relic alternati
 - **Notifications** — Telegram, Discord, Email, Webhook channels
 - **SLA & Uptime** — Tracking, reporting, incident correlation
 - **Topology & Impact Analysis** — Dependency graph, failure impact visualization
+- **Docker Management** — Manage containers, images, volumes, Compose on remote VMs via SSH
+- **CSV Import** — Bulk asset import
 
 ## Quick Start
 
@@ -77,6 +79,7 @@ uv run pytest --cov=src --cov-report=html
 - **Database:** PostgreSQL 14+ (asyncpg driver)
 - **Cache:** Redis 7+
 - **Auth:** JWT (PyJWT) + bcrypt
+- **Docker SSH:** asyncssh
 - **Testing:** pytest + pytest-asyncio
 
 ### Frontend
@@ -92,7 +95,8 @@ uv run pytest --cov=src --cov-report=html
 | Phase 0-11: Core Backend | ✅ Complete | — |
 | Phase 12: Notifications | ✅ Complete | — |
 | Phase 13: Frontend + Fixes | ✅ Complete | 2026-06-16 |
-| Phase 14: Production Ready | ⏳ Next | 2026-06-30 |
+| Phase 14: Production Ready | ✅ Complete | 2026-06-30 |
+| Phase 15: Docker Management | ✅ Complete | 2026-06-30 |
 
 See `docs/ROADMAP.md` for detailed breakdown.
 
@@ -102,5 +106,5 @@ Proprietary — QTI Internal Project
 
 ---
 
-**Last Updated:** 2026-06-16  
-**Status:** ✅ Phase 13 Complete — Ready for Phase 14
+**Last Updated:** 2026-06-30
+**Status:** ✅ Phase 15 Complete — Docker Management Added
