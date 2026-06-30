@@ -3,7 +3,7 @@
 
 -- Default admin user (password: admin123)
 INSERT INTO users (email, username, hashed_password, first_name, last_name, status)
-VALUES ('admin@serviceops.local', 'admin', '$2b$12$KIXxPfxOvKhhzVKUFC.Pt.wLz4sV1A21E7eqSwqrLEXlh4Q7Pvm0O', 'Admin', 'User', 'active')
+VALUES ('admin@serviceops.local', 'admin', '$2b$12$r.yS0Jjd66oQrI1RINJ4Lu4/qzpcYtV3BwY1yrHE3DLzHUKXFXwou', 'Admin', 'User', 'active')
 ON CONFLICT (email) DO NOTHING;
 
 -- Default roles
