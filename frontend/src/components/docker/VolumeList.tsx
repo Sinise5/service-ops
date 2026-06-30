@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 
 export default function VolumeList(props: { hostId: string }) {
   const [search, setSearch] = createSignal("")

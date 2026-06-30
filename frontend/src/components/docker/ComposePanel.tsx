@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 import ComposeEditor from "./ComposeEditor"
 
 export default function ComposePanel(props: { hostId: string }) {

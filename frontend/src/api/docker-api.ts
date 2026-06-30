@@ -1,20 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080"
+import { apiFetch } from '../lib/api'
+
+// API base — use /api prefix through vite/nginx proxy
+const BASE = '/api'
 
 async function request(path: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token")
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string> || {}),
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || `HTTP ${res.status}`)
-  }
+  const res = await apiFetch(`${BASE}${path}`, options)
   return res.json()
 }
 

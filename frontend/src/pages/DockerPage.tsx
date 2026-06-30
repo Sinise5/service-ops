@@ -1,6 +1,6 @@
 import { createSignal, createResource, For, Show, createEffect } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
-import { dockerApi } from "../lib/docker-api"
+import { dockerApi } from "../api/docker-api"
 import HostManager from "../components/docker/HostManager"
 import ContainerList from "../components/docker/ContainerList"
 import ImageList from "../components/docker/ImageList"
@@ -51,9 +51,9 @@ export default function DockerPage() {
   ]
 
   return (
-    <div>
+    <div class="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center gap-3">
           <Show when={selectedHost()}>
             <button
@@ -64,8 +64,8 @@ export default function DockerPage() {
             </button>
             <span class="text-slate-500">/</span>
           </Show>
-          <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-            <svg class="w-7 h-7 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+            <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.186m0 2.7h2.118a.187.187 0 00.186-.186V6.276a.186.186 0 00-.186-.185h-2.118a.186.186 0 00-.185.185v1.886c0 .103.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.276a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.886c0 .103.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.276a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.886c0 .103.084.186.186.186m5.893 2.7h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.184.186v1.887c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.186.186 0 00-.185-.186H5.136a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.186.186 0 00-.184-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.1 12.1 0 003.823-1.389c.98.567 2.054.983 3.206 1.245l.599.134c.128.018.256.027.386.027 1.084.001 2.351-.29 3.16-1.835.431-.818.432-1.776.426-2.612l-.001-.181-.036-.322M16.037 3.237a4.535 4.535 0 013.619 2.148 4.536 4.536 0 01-.041 4.4 4.53 4.53 0 01-3.587 2.161 4.535 4.535 0 01-3.61-2.161 4.532 4.532 0 01.031-4.386 4.535 4.535 0 013.588-2.162z"/>
             </svg>
             Docker Management
@@ -97,17 +97,17 @@ export default function DockerPage() {
       </div>
 
       {/* Tabs */}
-      <div class="flex gap-1 mb-6 border-b border-slate-700">
+      <div class="flex gap-1 border-b border-slate-700 overflow-x-auto">
         <For each={tabItems}>
           {(tab) => (
             <button
               onClick={() => setActiveTab(tab.key)}
-              class={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              class={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab() === tab.key
                   ? "border-blue-500 text-blue-400"
                   : "border-transparent text-slate-400 hover:text-white"
               }`}
-              disabled={tab.key !== "hosts" && tab.key !== "containers" && !selectedHost() && (activeTab() !== tab.key)}
+              disabled={tab.key !== "hosts" && tab.key !== "containers" && !selectedHost()}
             >
               {tab.label}
             </button>

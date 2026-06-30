@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 import ContainerDetail from "./ContainerDetail"
 import ContainerLogs from "./ContainerLogs"
 
@@ -55,10 +55,10 @@ export default function ContainerList(props: { hostId: string }) {
   }
 
   return (
-    <div>
+    <div class="space-y-4">
       {/* Toolbar */}
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <input
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
@@ -80,7 +80,7 @@ export default function ContainerList(props: { hostId: string }) {
             ))}
           </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 mt-2 sm:mt-0">
           <button onClick={refetch}
             class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700">
             ⟳ Refresh
@@ -89,7 +89,7 @@ export default function ContainerList(props: { hostId: string }) {
       </div>
 
       {/* Table */}
-      <div class="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
         <Show
           when={!containers.loading}
           fallback={

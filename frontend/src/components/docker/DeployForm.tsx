@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 
 export default function DeployForm(props: { hostId: string }) {
   const [selectedTemplate, setSelectedTemplate] = createSignal<any>(null)

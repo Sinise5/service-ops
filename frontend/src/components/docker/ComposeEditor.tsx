@@ -1,5 +1,5 @@
 import { createSignal, Show, onMount, onCleanup } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 
 export default function ComposeEditor(props: {
   hostId: string; project: any; initialContent: string

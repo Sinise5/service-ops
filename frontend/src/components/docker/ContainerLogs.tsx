@@ -1,5 +1,5 @@
 import { createSignal, createResource, For, Show, onCleanup } from "solid-js"
-import { dockerApi } from "../../lib/docker-api"
+import { dockerApi } from "../../api/docker-api"
 
 export default function ContainerLogs(props: { hostId: string; containerId: string; onClose: () => void }) {
   const [tail, setTail] = createSignal(100)
