@@ -71,9 +71,10 @@ class SSHClient:
             raise SSHError(f"Permission denied: {e}")
         except asyncssh.ConnectionLost as e:
             raise SSHError(f"Connection lost: {e}")
-        except asyncssh.InvalidKey as e:
-            raise SSHError(f"Invalid SSH key: {e}")
         except Exception as e:
+            err_msg = str(e)
+            if "invalid" in err_msg.lower() and "key" in err_msg.lower():
+                raise SSHError(f"Invalid SSH key: {e}")
             raise SSHError(f"SSH connection failed: {e}")
 
     async def exec(
@@ -89,14 +90,13 @@ class SSHClient:
         async with self.connection() as conn:
             env = {}
             if cwd:
-                # Prepend cd to command
-                command = f"cd {cwd!r} && {command}"
+                # Only cd if directory exists; otherwise run directly
+                command = f"cd {cwd!r} 2>/dev/null || true && {command}"
 
             result = await conn.run(
                 command,
                 timeout=timeout,
                 check=False,
-                environment=env,
             )
             stdout = result.stdout if result.stdout else ""
             stderr = result.stderr if result.stderr else ""
@@ -108,7 +108,8 @@ class SSHClient:
         Use for docker logs -f etc.
         """
         if cwd:
-            command = f"cd {cwd!r} && {command}"
+            # Only cd if directory exists; otherwise run directly
+            command = f"cd {cwd!r} 2>/dev/null || true && {command}"
 
         async with self.connection() as conn:
             async with conn.create_process(command) as process:

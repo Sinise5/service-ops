@@ -17,11 +17,11 @@ from ...utils import json_response, get_header
 from ...config import settings
 
 
+_CRYPTO = CryptoService()
 _HOST_REPO = DockerHostRepository(crypto_service=_CRYPTO)
 _COMPOSE_REPO = ComposeProjectRepository()
 _TEMPLATE_REPO = DeployTemplateRepository()
 _LOG_REPO = ContainerLogRepository()
-_CRYPTO = CryptoService()
 
 
 def _get_service(request: Request, host_id: str) -> DockerService:
