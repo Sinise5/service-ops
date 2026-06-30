@@ -54,6 +54,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9080/health"]
       interval: 30s
@@ -80,6 +82,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - serviceops-network
+
+  migrate:
+    image: postgres:16-alpine
+    container_name: serviceops_migrate
+    entrypoint: >
+      sh -c "sleep 5 && psql postgresql://postgres:***@postgres:5432/serviceops_dev -f /docker-migration.sql"
+    volumes:
+      - ./docker-migration.sql:/docker-migration.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - serviceops-network
 
