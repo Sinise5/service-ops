@@ -11,16 +11,30 @@ export default function ContainerList(props: { hostId: string }) {
   const [actionLoading, setActionLoading] = createSignal<Record<string, string>>({})
   const [bulkSelected, setBulkSelected] = createSignal<Set<string>>(new Set())
 
+  // SSH password confirmation state
+  const [passModal, setPassModal] = createSignal(false)
+  const [sshPass, setSshPass] = createSignal("")
+  const [showSshPass, setShowSshPass] = createSignal(false)
+  const [passError, setPassError] = createSignal("")
+  const [removeTarget, setRemoveTarget] = createSignal<string | null>(null)
+  const [bulkRemoveMode, setBulkRemoveMode] = createSignal(false)
+
   const [containers, { refetch }] = createResource(
-    () => props.hostId,
-    (hostId) => dockerApi.listContainers(hostId, filter() !== "stopped")
+    () => [props.hostId, filter()],
+    ([hostId]) => dockerApi.listContainers(hostId, true)
   )
 
   const filtered = () => {
     const list = containers() || []
+    let result = list
+    if (filter() === "running") {
+      result = list.filter((c: any) => c.state?.toLowerCase() === "running")
+    } else if (filter() === "stopped") {
+      result = list.filter((c: any) => c.state?.toLowerCase() !== "running")
+    }
     const q = search().toLowerCase()
-    if (!q) return list
-    return list.filter((c: any) =>
+    if (!q) return result
+    return result.filter((c: any) =>
       c.name.toLowerCase().includes(q) || c.image.toLowerCase().includes(q)
     )
   }
@@ -50,12 +64,60 @@ export default function ContainerList(props: { hostId: string }) {
     setActionLoading({ ...actionLoading(), [containerId]: "" })
   }
 
-  const removeContainer = async (containerId: string) => {
-    if (!confirm("Remove this container? This cannot be undone.")) return
-    await doAction(containerId, "remove")
+  // Remove single container — asks SSH password
+  const promptRemove = (containerId: string) => {
+    setRemoveTarget(containerId)
+    setBulkRemoveMode(false)
+    setSshPass("")
+    setPassError("")
+    setPassModal(true)
   }
 
-  // Bulk actions
+  const doRemove = async () => {
+    const cid = removeTarget()
+    if (!cid) return
+    if (!sshPass()) { setPassError("SSH password required."); return }
+    setPassModal(false)
+    setActionLoading({ ...actionLoading(), [cid]: "remove" })
+    try {
+      await dockerApi.removeContainer(props.hostId, cid, sshPass())
+      refetch()
+    } catch (e: any) {
+      alert(`Remove failed: ${e.message}`)
+    }
+    setActionLoading({ ...actionLoading(), [cid]: "" })
+    setSshPass("")
+  }
+
+  // Bulk remove — asks SSH password
+  const promptBulkRemove = () => {
+    const ids = Array.from(bulkSelected())
+    if (!ids.length) return
+    setRemoveTarget(null)
+    setBulkRemoveMode(true)
+    setSshPass("")
+    setPassError("")
+    setPassModal(true)
+  }
+
+  const doBulkRemove = async () => {
+    const ids = Array.from(bulkSelected())
+    if (!ids.length) return
+    if (!sshPass()) { setPassError("SSH password required."); return }
+    setPassModal(false)
+    try {
+      for (const cid of ids) {
+        await dockerApi.removeContainer(props.hostId, cid, sshPass())
+      }
+      setBulkSelected(new Set())
+      refetch()
+    } catch (e: any) {
+      alert(`Bulk remove failed: ${e.message}`)
+    }
+    setSshPass("")
+  }
+
+  // Bulk actions (start/stop/restart — no password needed)
   const toggleBulk = (id: string) => {
     const s = new Set(bulkSelected())
     if (s.has(id)) s.delete(id); else s.add(id)
@@ -124,6 +186,8 @@ export default function ContainerList(props: { hostId: string }) {
               class="px-2.5 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs border border-red-800">⏹ Stop All</button>
             <button onClick={() => bulkAction("restart")}
               class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs border border-slate-600">🔄 Restart All</button>
+            <button onClick={promptBulkRemove}
+              class="px-2.5 py-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 rounded text-xs border border-red-800">🗑 Remove All</button>
             <button onClick={() => setBulkSelected(new Set())}
               class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs border border-slate-600 ml-auto">Clear</button>
           </div>
@@ -220,8 +284,8 @@ export default function ContainerList(props: { hostId: string }) {
                           >🔍</button>
                           {/* Remove */}
                           <button
-                            onClick={() => removeContainer(c.container_id)}
-                            disabled={actionLoading()[c.container_id]}
+                            onClick={() => promptRemove(c.container_id)}
+                            disabled={actionLoading()[c.container_id] === "remove"}
                             title="Remove"
                             class="p-1.5 bg-slate-700 hover:bg-red-900/30 text-slate-300 hover:text-red-400 rounded text-xs"
                           >🗑</button>
@@ -244,6 +308,42 @@ export default function ContainerList(props: { hostId: string }) {
           {(containers() || []).filter((c: any) => c.state?.toLowerCase() === "running").length} running
           {" · "}
           {(containers() || []).filter((c: any) => c.state?.toLowerCase() !== "running").length} stopped
+        </div>
+      </Show>
+
+      {/* SSH Password Confirmation Modal */}
+      <Show when={passModal()}>
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => { setPassModal(false); setRemoveTarget(null); }}>
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h3 class="text-white font-semibold text-sm mb-1">
+              {removeTarget() ? "Remove container?" : `Remove ${bulkSelected().size} container${bulkSelected().size !== 1 ? 's' : ''}?`}
+            </h3>
+            <p class="text-slate-400 text-xs mb-4">Enter SSH password for this host to proceed.</p>
+            <div class="relative mb-3">
+              <input
+                type={showSshPass() ? "text" : "password"}
+                value={sshPass()}
+                onInput={(e) => setSshPass(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && (removeTarget() ? doRemove() : doBulkRemove())}
+                placeholder="SSH password"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 pr-10 text-sm text-white placeholder-slate-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSshPass(!showSshPass())}
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+              >{showSshPass() ? "Hide" : "Show"}</button>
+            </div>
+            <Show when={passError()}>
+              <p class="text-xs text-red-400 mb-2">{passError()}</p>
+            </Show>
+            <div class="flex gap-2 justify-end">
+              <button onClick={() => { setPassModal(false); setRemoveTarget(null); }}
+                class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">Cancel</button>
+              <button onClick={() => removeTarget() ? doRemove() : doBulkRemove()}
+                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs">Delete</button>
+            </div>
+          </div>
         </div>
       </Show>
 

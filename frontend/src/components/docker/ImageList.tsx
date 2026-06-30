@@ -14,20 +14,33 @@ export default function ImageList(props: { hostId: string }) {
   const [sshPass, setSshPass] = createSignal("")
   const [bulkDeleting, setBulkDeleting] = createSignal(false)
   const [bulkError, setBulkError] = createSignal("")
+  const [deleteTarget, setDeleteTarget] = createSignal<string | null>(null)
+  const [pruneMode, setPruneMode] = createSignal(false)
 
   const [images, { refetch }] = createResource(() => props.hostId, (id) => dockerApi.listImages(id))
 
   const pruneImages = async () => {
-    if (!confirm("Prune unused images? This removes dangling/unused images.")) return
+    setPruneMode(true)
+    setSshPass("")
+    setBulkError("")
+    setDeleteTarget(null)
+    setPassModal(true)
+  }
+
+  const doPrune = async () => {
+    if (!sshPass()) { setBulkError("SSH password required."); return }
+    setPassModal(false)
+    setPruneMode(false)
     setPruning(true)
     try {
-      const result = await dockerApi.systemPrune(props.hostId, "images")
+      const result = await dockerApi.systemPrune(props.hostId, "images", sshPass())
       alert(result.output || "Prune complete")
       refetch()
     } catch (e: any) {
       alert(e.message)
     }
     setPruning(false)
+    setSshPass("")
   }
 
   const handlePull = async () => {
@@ -90,11 +103,14 @@ export default function ImageList(props: { hostId: string }) {
 
   // SSH password confirm → bulk delete selected <none> images
   const confirmBulkDeleteNone = () => {
-    const noneIds = noneImages().map((i: any) => i.id)
+    const noneIds = noneImages().map((i: any) => i.image_id)
     if (noneIds.length === 0) { alert("No <none> images to delete."); return }
+    setSelected(new Set(noneIds))
+    setPruneMode(false)
     setSshPass("")
     setBulkError("")
     setPassModal(true)
+    setDeleteTarget(null)
   }
 
   const doBulkDelete = async () => {
@@ -102,16 +118,18 @@ export default function ImageList(props: { hostId: string }) {
     if (ids.length === 0) { alert("Select images first."); return }
     if (!sshPass()) { setBulkError("SSH password required."); return }
     setPassModal(false)
+    setPruneMode(false)
     setBulkDeleting(true)
     setBulkError("")
     try {
-      const result = await dockerApi.bulkRemoveImages(props.hostId, ids)
+      const result = await dockerApi.bulkRemoveImages(props.hostId, ids, sshPass())
       const errors = (result.results || []).filter((r: any) => r.status === "error")
       if (errors.length > 0) {
         setBulkError(`Deleted ${ids.length - errors.length}/${ids.length}. Errors: ${errors.map((e: any) => e.message).join("; ")}`)
       }
       refetch()
       setSelected(new Set())
+      setSshPass("")
     } catch (e: any) {
       setBulkError(e.message)
     }
@@ -119,11 +137,24 @@ export default function ImageList(props: { hostId: string }) {
   }
 
   const removeImage = async (imageId: string) => {
-    if (!confirm("Remove this image?")) return
+    setDeleteTarget(imageId)
+    setSshPass("")
+    setBulkError("")
+    setPassModal(true)
+  }
+
+  const doRemoveImage = async () => {
+    const imageId = deleteTarget()
+    if (!imageId) return
+    if (!sshPass()) { setBulkError("SSH password required."); return }
+    setPassModal(false)
+    setPruneMode(false)
     setActionLoading({ ...actionLoading(), [imageId]: true })
     try {
-      await dockerApi.removeImage(props.hostId, imageId)
+      await dockerApi.removeImage(props.hostId, imageId, false, sshPass())
       refetch()
+      setDeleteTarget(null)
+      setSshPass("")
     } catch (e: any) {
       alert(e.message)
     }
@@ -197,15 +228,17 @@ export default function ImageList(props: { hostId: string }) {
 
       {/* SSH Password Confirmation Modal */}
       <Show when={passModal()}>
-        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setPassModal(false)}>
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => { setPassModal(false); setDeleteTarget(null); setPruneMode(false); }}>
           <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h3 class="text-white font-semibold text-sm mb-1">Confirm delete {noneImages().length} &lt;none&gt; images</h3>
+            <h3 class="text-white font-semibold text-sm mb-1">
+              {pruneMode() ? "Prune unused images?" : deleteTarget() ? "Remove image?" : `Delete ${selected().size} image${selected().size !== 1 ? 's' : ''}?`}
+            </h3>
             <p class="text-slate-400 text-xs mb-4">Enter SSH password for this host to proceed.</p>
             <input
               type="password"
               value={sshPass()}
               onInput={(e) => setSshPass(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === "Enter" && doBulkDelete()}
+              onKeyDown={(e) => e.key === "Enter" && (pruneMode() ? doPrune() : deleteTarget() ? doRemoveImage() : doBulkDelete())}
               placeholder="SSH password"
               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 mb-3"
             />
@@ -213,9 +246,9 @@ export default function ImageList(props: { hostId: string }) {
               <p class="text-xs text-red-400 mb-2">{bulkError()}</p>
             </Show>
             <div class="flex gap-2 justify-end">
-              <button onClick={() => setPassModal(false)}
+              <button onClick={() => { setPassModal(false); setDeleteTarget(null); setPruneMode(false); }}
                 class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">Cancel</button>
-              <button onClick={doBulkDelete}
+              <button onClick={() => pruneMode() ? doPrune() : deleteTarget() ? doRemoveImage() : doBulkDelete()}
                 class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs">Delete</button>
             </div>
           </div>
@@ -248,12 +281,12 @@ export default function ImageList(props: { hostId: string }) {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <For each={filtered()}>
               {(img: any) => (
-                <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors" classList={{ "border-blue-600": selected().has(img.id) }}>
+                <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors" classList={{ "border-blue-600": selected().has(img.image_id) }}>
                   <div class="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      checked={selected().has(img.id)}
-                      onChange={() => toggleSelect(img.id)}
+                      checked={selected().has(img.image_id)}
+                      onChange={() => toggleSelect(img.image_id)}
                       class="accent-blue-500 mt-1 flex-shrink-0"
                     />
                     <div class="min-w-0 flex-1">
@@ -265,19 +298,10 @@ export default function ImageList(props: { hostId: string }) {
                         <p>Size: <span class="text-slate-400">{img.size || "—"}</span></p>
                         <p>Created: <span class="text-slate-400">{img.created?.slice(0, 10) || "—"}</span></p>
                       </div>
-                      <Show when={(img.repo_tags?.length || 0) > 1}>
-                        <div class="flex gap-1 flex-wrap mt-1.5">
-                          <For each={img.repo_tags.slice(1)}>
-                            {(tag: string) => (
-                              <span class="px-1 py-0.5 bg-slate-800 rounded text-xs text-slate-400">{tag}</span>
-                            )}
-                          </For>
-                        </div>
-                      </Show>
                     </div>
                     <button
-                      onClick={() => removeImage(img.id)}
-                      disabled={actionLoading()[img.id]}
+                      onClick={() => removeImage(img.image_id)}
+                      disabled={actionLoading()[img.image_id]}
                       class="px-2 py-1 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded text-xs disabled:opacity-50 flex-shrink-0"
                     >🗑 Remove</button>
                   </div>

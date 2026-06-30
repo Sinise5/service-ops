@@ -1,5 +1,6 @@
 import { createSignal, createResource, For, Show, createEffect } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
+import Layout from "../components/Layout"
 import { dockerApi } from "../api/docker-api"
 import HostManager from "../components/docker/HostManager"
 import ContainerList from "../components/docker/ContainerList"
@@ -51,8 +52,9 @@ export default function DockerPage() {
   ]
 
   return (
-    <div class="space-y-4 sm:space-y-6">
-      {/* Header */}
+    <Layout>
+      <div class="space-y-4 sm:space-y-6">
+        {/* Header */}
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center gap-3">
           <Show when={selectedHost()}>
@@ -175,6 +177,7 @@ export default function DockerPage() {
         />
       </Show>
     </div>
+    </Layout>
   )
 }
 
@@ -197,6 +200,7 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
   const [testResult, setTestResult] = createSignal<any>(null)
   const [saving, setSaving] = createSignal(false)
   const [error, setError] = createSignal("")
+  const [showFormPass, setShowFormPass] = createSignal(false)
 
   const update = (key: string, value: any) => setForm({ ...form(), [key]: value })
 
@@ -293,8 +297,12 @@ function HostFormModal(props: { host?: any; onClose: () => void; onSave: () => v
           <Show when={form().auth_type === "password"}>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Password</label>
-              <input type="password" value={form().password} onInput={(e) => update("password", e.currentTarget.value)}
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500" placeholder="••••••••" />
+              <div class="relative">
+                <input type={showFormPass() ? "text" : "password"} value={form().password} onInput={(e) => update("password", e.currentTarget.value)}
+                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 pr-10 text-white text-sm placeholder-slate-500" placeholder="••••••••" />
+                <button type="button" onClick={() => setShowFormPass(!showFormPass())}
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">{showFormPass() ? "Hide" : "Show"}</button>
+              </div>
             </div>
           </Show>
 

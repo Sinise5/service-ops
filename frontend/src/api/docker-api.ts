@@ -3,8 +3,18 @@ import { apiFetch } from '../lib/api'
 // API base — apiFetch already prepends /api via API_BASE_URL
 const BASE = ''
 
-async function request(path: string, options: RequestInit = {}) {
-  const res = await apiFetch(`${BASE}${path}`, options)
+async function request(path: string, options: RequestInit = {}, sshPassword?: string) {
+  const headers = { ...options.headers } as Record<string, string>
+  if (sshPassword) headers['X-SSH-Password'] = sshPassword
+  const res = await apiFetch(`${BASE}${path}`, { ...options, headers })
+  return res.json()
+}
+
+/** Login-password guarded operations (delete host) */
+async function requestWithLogin(path: string, loginPassword: string, options: RequestInit = {}) {
+  const headers = { ...options.headers } as Record<string, string>
+  headers['X-Password'] = loginPassword
+  const res = await apiFetch(`${BASE}${path}`, { ...options, headers })
   return res.json()
 }
 
@@ -15,7 +25,10 @@ export const dockerApi = {
   createHost: (data: any) => request("/docker/hosts", { method: "POST", body: JSON.stringify(data) }),
   getHost: (id: string) => request(`/docker/hosts/${id}`),
   updateHost: (id: string, data: any) => request(`/docker/hosts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteHost: (id: string) => request(`/docker/hosts/${id}`, { method: "DELETE" }),
+  deleteHost: (id: string, loginPassword?: string) =>
+    loginPassword
+      ? requestWithLogin(`/docker/hosts/${id}`, loginPassword, { method: "DELETE" })
+      : request(`/docker/hosts/${id}`, { method: "DELETE" }),
   testHost: (id: string) => request(`/docker/hosts/${id}/test`, { method: "POST" }),
 
   // Containers
@@ -25,8 +38,8 @@ export const dockerApi = {
   containerLogs: (hostId: string, containerId: string, tail = 100) => request(`/docker/hosts/${hostId}/containers/${containerId}/logs?tail=${tail}`),
   containerAction: (hostId: string, containerId: string, action: string) =>
     request(`/docker/hosts/${hostId}/containers/${containerId}/${action}`, { method: "POST" }),
-  removeContainer: (hostId: string, containerId: string) =>
-    request(`/docker/hosts/${hostId}/containers/${containerId}`, { method: "DELETE" }),
+  removeContainer: (hostId: string, containerId: string, sshPassword?: string) =>
+    request(`/docker/hosts/${hostId}/containers/${containerId}`, { method: "DELETE" }, sshPassword),
   execContainer: (hostId: string, containerId: string, command: string) =>
     request(`/docker/hosts/${hostId}/containers/exec`, {
       method: "POST",
@@ -49,10 +62,10 @@ export const dockerApi = {
   listImages: (hostId: string) => request(`/docker/hosts/${hostId}/images`),
   pullImage: (hostId: string, image: string) =>
     request(`/docker/hosts/${hostId}/images/pull`, { method: "POST", body: JSON.stringify({ image }) }),
-  removeImage: (hostId: string, imageId: string, force = false) =>
-    request(`/docker/hosts/${hostId}/images/${imageId}?force=${force}`, { method: "DELETE" }),
-  bulkRemoveImages: (hostId: string, imageIds: string[]) =>
-    request(`/docker/hosts/${hostId}/images/bulk-delete`, { method: "POST", body: JSON.stringify({ image_ids: imageIds }) }),
+  removeImage: (hostId: string, imageId: string, force = false, sshPassword?: string) =>
+    request(`/docker/hosts/${hostId}/images/${imageId}?force=${force}`, { method: "DELETE" }, sshPassword),
+  bulkRemoveImages: (hostId: string, imageIds: string[], sshPassword?: string) =>
+    request(`/docker/hosts/${hostId}/images/bulk-delete`, { method: "POST", body: JSON.stringify({ image_ids: imageIds }) }, sshPassword),
 
   // Volumes
   listVolumes: (hostId: string) => request(`/docker/hosts/${hostId}/volumes`),
@@ -65,8 +78,8 @@ export const dockerApi = {
     request(`/docker/hosts/${hostId}/compose/projects`, { method: "POST", body: JSON.stringify(data) }),
   composeUp: (hostId: string, projectId: string) =>
     request(`/docker/hosts/${hostId}/compose/${projectId}/up`, { method: "POST" }),
-  composeDown: (hostId: string, projectId: string) =>
-    request(`/docker/hosts/${hostId}/compose/${projectId}/down`, { method: "POST" }),
+  composeDown: (hostId: string, projectId: string, sshPassword?: string) =>
+    request(`/docker/hosts/${hostId}/compose/${projectId}/down`, { method: "POST" }, sshPassword),
   composeRestart: (hostId: string, projectId: string) =>
     request(`/docker/hosts/${hostId}/compose/${projectId}/restart`, { method: "POST" }),
   composeScale: (hostId: string, projectId: string, service: string, replicas: number) =>
@@ -90,12 +103,12 @@ export const dockerApi = {
   deleteTemplate: (id: string) => request(`/docker/templates/${id}`, { method: "DELETE" }),
 
   // System / Bulk
-  systemPrune: (hostId: string, target = "all") =>
-    request(`/docker/hosts/${hostId}/prune?target=${target}`, { method: "POST" }),
-  bulkContainerAction: (hostId: string, containerIds: string[], action: string) =>
+  systemPrune: (hostId: string, target = "all", sshPassword?: string) =>
+    request(`/docker/hosts/${hostId}/prune?target=${target}`, { method: "POST" }, sshPassword),
+  bulkContainerAction: (hostId: string, containerIds: string[], action: string, sshPassword?: string) =>
     request(`/docker/hosts/${hostId}/containers/bulk`, {
       method: "POST", body: JSON.stringify({ container_ids: containerIds, action }),
-    }),
+    }, sshPassword),
 
   // Saved logs
   getSavedLogs: (hostId: string, containerId: string, limit = 100) =>

@@ -41,9 +41,42 @@ def _get_user_id(request: Request) -> str:
     return "00000000-0000-0000-0000-000000000000"  # system / nil UUID
 
 
-# ═══════════════════════════════════════════════
-#  HOST MANAGEMENT
-# ═══════════════════════════════════════════════
+async def _verify_ssh_password(request: Request, host_id: str) -> bool:
+    """Verify X-SSH-Password header matches decrypted stored password.
+    Returns True if match (or password auth not used)."""
+    header_pass = get_header(request, "x-ssh-password")
+    if not header_pass:
+        return False
+    try:
+        creds = await _HOST_REPO.get_encrypted_creds(UUID(host_id))
+        if not creds:
+            return False
+        if creds["auth_type"] == "password" and creds["password_encrypted"]:
+            stored = _CRYPTO.decrypt(creds["password_encrypted"])
+            return stored == header_pass
+        # Key-based auth — skip password check
+        if creds["auth_type"] == "key":
+            return True
+    except Exception:
+        pass
+    return False
+
+
+async def _verify_login_password(request: Request, user_id: str) -> bool:
+    """Verify X-Password header matches user's login password (bcrypt)."""
+    from ..auth.repository import UserRepository
+    header_pw = get_header(request, "x-password")
+    if not header_pw:
+        return False
+    try:
+        import bcrypt
+        hashed = await UserRepository().get_hashed_password(UUID(user_id))
+        if not hashed:
+            return False
+        hash_bytes = hashed.encode() if isinstance(hashed, str) else hashed
+        return bcrypt.checkpw(header_pw.encode(), hash_bytes)
+    except Exception:
+        return False
 
 async def list_hosts(request: Request):
     try:
@@ -89,6 +122,14 @@ async def update_host(request: Request):
 async def delete_host(request: Request):
     try:
         host_id = request.path_params.get("host_id")
+        # Extract user from JWT (Docker routes don't have require_auth middleware)
+        from ..auth.service import auth_service
+        auth_header = get_header(request, "Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return json_response({"error": "Unauthorized"}, 401)
+        user_id = auth_service.verify_token(auth_header[7:])
+        if not await _verify_login_password(request, user_id):
+            return json_response({"error": "Invalid login password (X-Password header)"}, 401)
         await _HOST_REPO.delete(UUID(host_id))
         return json_response({"message": "Host deleted"}, 200)
     except Exception as e:
@@ -212,6 +253,8 @@ async def container_remove(request: Request):
     try:
         host_id = request.path_params.get("host_id")
         container_id = request.path_params.get("container_id")
+        if not await _verify_ssh_password(request, host_id):
+            return json_response({"error": "SSH password required via X-SSH-Password header"}, 401)
         service = _get_service(request, host_id)
         result = await service.container_action(container_id, "remove")
         return json_response(result, 200)
@@ -279,6 +322,8 @@ async def remove_image(request: Request):
     try:
         host_id = request.path_params.get("host_id")
         image_id = request.path_params.get("image_id")
+        if not await _verify_ssh_password(request, host_id):
+            return json_response({"error": "SSH password required via X-SSH-Password header"}, 401)
         force = request.query_params.get("force", "false").lower() == "true"
         service = _get_service(request, host_id)
         result = await service.remove_image(image_id, force=force)
@@ -290,6 +335,8 @@ async def remove_image(request: Request):
 async def bulk_remove_images(request: Request):
     try:
         host_id = request.path_params.get("host_id")
+        if not await _verify_ssh_password(request, host_id):
+            return json_response({"error": "SSH password required via X-SSH-Password header"}, 401)
         body = json.loads(request.body)
         image_ids = body.get("image_ids", [])
         if not image_ids:
@@ -394,6 +441,8 @@ async def compose_down(request: Request):
         if not project:
             return json_response({"error": "Project not found"}, 404)
         remove_volumes = request.query_params.get("remove_volumes", "false").lower() == "true"
+        if not await _verify_ssh_password(request, host_id):
+            return json_response({"error": "SSH password required via X-SSH-Password header"}, 401)
         service = _get_service(request, host_id)
         result = await service.compose_down(project.path, remove_volumes=remove_volumes)
         return json_response({"message": result}, 200)
@@ -490,6 +539,8 @@ async def system_prune(request: Request):
     """Prune Docker system on a host."""
     try:
         host_id = request.path_params.get("host_id")
+        if not await _verify_ssh_password(request, host_id):
+            return json_response({"error": "SSH password required via X-SSH-Password header"}, 401)
         target = request.query_params.get("target", "all")
         service = _get_service(request, host_id)
         result = await service.system_prune(target)

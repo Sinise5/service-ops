@@ -13,6 +13,12 @@ interface Props {
 export default function HostManager(props: Props) {
   const [testing, setTesting] = createSignal<Record<string, string>>({})
   const [statuses, setStatuses] = createSignal<Record<string, any>>({})
+  const [passModal, setPassModal] = createSignal(false)
+  const [sshPass, setSshPass] = createSignal("")
+  const [passError, setPassError] = createSignal("")
+  const [deleteTargetId, setDeleteTargetId] = createSignal<string | null>(null)
+  const [deleting, setDeleting] = createSignal(false)
+  const [showPass, setShowPass] = createSignal(false)
 
   const testConnection = async (host: any) => {
     setTesting({ ...testing(), [host.id]: "testing" })
@@ -25,14 +31,28 @@ export default function HostManager(props: Props) {
     setTesting({ ...testing(), [host.id]: "done" })
   }
 
-  const deleteHost = async (hostId: string) => {
-    if (!confirm("Delete this Docker host and all its projects?")) return
+  const promptDelete = (hostId: string) => {
+    setDeleteTargetId(hostId)
+    setSshPass("")
+    setPassError("")
+    setPassModal(true)
+  }
+
+  const doDelete = async () => {
+    const hid = deleteTargetId()
+    if (!hid) return
+    if (!sshPass()) { setPassError("Login password required."); return }
+    setPassModal(false)
+    setDeleting(true)
     try {
-      await dockerApi.deleteHost(hostId)
+      await dockerApi.deleteHost(hid, sshPass())
       props.onDelete()
     } catch (e: any) {
-      alert(e.message)
+      alert(`Delete failed: ${e.message}`)
     }
+    setDeleting(false)
+    setSshPass("")
+    setDeleteTargetId(null)
   }
 
   const statusColor = (host: any) => {
@@ -99,7 +119,7 @@ export default function HostManager(props: Props) {
                     <button onClick={(e) => { e.stopPropagation(); props.onEdit(host) }}
                       title="Edit"
                       class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 hover:text-white text-xs">✎</button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteHost(host.id) }}
+                    <button onClick={(e) => { e.stopPropagation(); promptDelete(host.id) }}
                       title="Delete"
                       class="p-1.5 bg-slate-800 hover:bg-red-900/30 rounded text-slate-400 hover:text-red-400 text-xs">✕</button>
                   </div>
@@ -138,6 +158,41 @@ export default function HostManager(props: Props) {
           </svg>
           <p class="text-lg font-medium text-slate-300 mb-1">No Docker hosts yet</p>
           <p class="text-sm text-slate-500">Add your first VM to start managing Docker containers.</p>
+        </div>
+      </Show>
+
+      {/* SSH Password Confirmation Modal */}
+      <Show when={passModal()}>
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => { setPassModal(false); setDeleteTargetId(null); }}>
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h3 class="text-white font-semibold text-sm mb-1">Delete this host?</h3>
+            <p class="text-slate-400 text-xs mb-4">Enter your login password to proceed.</p>
+            <div class="relative mb-3">
+              <input
+                type={showPass() ? "text" : "password"}
+                value={sshPass()}
+                onInput={(e) => setSshPass(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && doDelete()}
+                placeholder="Login password"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 pr-10 text-sm text-white placeholder-slate-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass())}
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+              >{showPass() ? "Hide" : "Show"}</button>
+            </div>
+            <Show when={passError()}>
+              <p class="text-xs text-red-400 mb-2">{passError()}</p>
+            </Show>
+            <div class="flex gap-2 justify-end">
+              <button onClick={() => { setPassModal(false); setDeleteTargetId(null); }}
+                class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">Cancel</button>
+              <button onClick={doDelete}
+                disabled={deleting()}
+                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded text-xs">Delete</button>
+            </div>
+          </div>
         </div>
       </Show>
     </div>

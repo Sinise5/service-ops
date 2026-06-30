@@ -63,6 +63,16 @@ class UserRepository:
                 tuple(values)
             )
 
+    async def get_hashed_password(self, user_id: UUID) -> str | None:
+        """Get hashed password by user ID."""
+        async with db.get_connection() as conn:
+            cursor = await conn.execute(
+                "SELECT hashed_password FROM users WHERE id = %s",
+                (str(user_id),)
+            )
+            row = await cursor.fetchone()
+            return row["hashed_password"] if row else None
+
 
 class RoleRepository:
     async def create(self, role: RoleCreate) -> UUID:
