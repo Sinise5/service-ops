@@ -98,9 +98,9 @@ export default function AssetsPage() {
 
   return (
     <Layout>
-      <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">Assets</h1>
+      <div class="space-y-4 sm:space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white">Assets</h1>
           <button
             onClick={() => setShowForm(!showForm())}
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
@@ -116,8 +116,8 @@ export default function AssetsPage() {
         </Show>
 
         {/* Filter bar */}
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div class="flex gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <input
               type="text"
               placeholder="Search assets..."
@@ -142,7 +142,7 @@ export default function AssetsPage() {
         </div>
 
         <Show when={showForm()}>
-          <form onSubmit={handleCreateAsset} class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+          <form onSubmit={handleCreateAsset} class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 space-y-4">
             <h2 class="text-lg font-semibold text-white">{editingId() ? "Edit Asset" : "Create Asset"}</h2>
             <input
               type="text"
@@ -193,39 +193,39 @@ export default function AssetsPage() {
         </Show>
 
         <Show when={!loading()} fallback={<div class="text-slate-400">Loading assets...</div>}>
-          <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-            <table class="w-full">
+          <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+            <table class="w-full min-w-[500px]">
               <thead class="bg-slate-800 border-b border-slate-700">
                 <tr>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-slate-300">Name</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-slate-300">Type</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-slate-300">Status</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-slate-300">Created</th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-slate-300">Name</th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-slate-300 hidden sm:table-cell">Type</th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-slate-300 hidden sm:table-cell">Status</th>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-slate-300 hidden md:table-cell">Created</th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-700">
                 <For each={filteredAssets()} fallback={
                   <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">
+                    <td colspan="5" class="px-4 py-6 text-center text-slate-400 text-sm">
                       No assets found
                     </td>
                   </tr>
                 }>
                   {(asset: any) => (
                     <tr class="hover:bg-slate-800/50 transition-colors">
-                      <td class="px-6 py-3 text-sm text-white">{asset.name}</td>
-                      <td class="px-6 py-3 text-sm text-slate-400">{asset.asset_type_name || asset.asset_type_id}</td>
-                      <td class="px-6 py-3 text-sm">
-                        <span class="px-2 py-1 bg-green-900/50 border border-green-700 text-green-200 rounded text-xs">
+                      <td class="px-4 py-3 text-sm text-white truncate max-w-[140px]">{asset.name}</td>
+                      <td class="px-4 py-3 text-sm text-slate-400 hidden sm:table-cell truncate max-w-[100px]">{asset.asset_type_name || asset.asset_type_id}</td>
+                      <td class="px-4 py-3 hidden sm:table-cell">
+                        <span class="px-2 py-0.5 bg-green-900/50 border border-green-700 text-green-200 rounded text-xs">
                           {asset.status || "active"}
                         </span>
                       </td>
-                      <td class="px-6 py-3 text-sm text-slate-400">
+                      <td class="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">
                         {new Date(asset.created_at).toLocaleDateString()}
                       </td>
-                      <td class="px-6 py-3 text-sm">
-                        <div class="flex gap-2">
+                      <td class="px-4 py-3">
+                        <div class="flex gap-1 sm:gap-2">
                           <button
                             onClick={() => handleEdit(asset)}
                             class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"

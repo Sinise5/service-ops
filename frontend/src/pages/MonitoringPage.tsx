@@ -151,11 +151,11 @@ export default function MonitoringPage() {
   return (
     <Layout>
       <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">Monitoring Checks</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white">Monitoring Checks</h1>
           <button
             onClick={() => setShowForm(!showForm())}
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors w-fit"
           >
             {showForm() ? "Cancel" : "+ Add Check"}
           </button>
@@ -168,8 +168,8 @@ export default function MonitoringPage() {
         </Show>
 
         {/* Filter bar */}
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div class="flex gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <input
               type="text"
               placeholder="Search checks..."
@@ -293,72 +293,74 @@ export default function MonitoringPage() {
           </form>
         </Show>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-          <Show when={!loading()} fallback={<div class="p-6 text-slate-400">Loading...</div>}>
+        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+          <Show when={!loading()} fallback={<div class="p-4 sm:p-6 text-slate-400">Loading...</div>}>
             <Show when={checks().length === 0}>
-              <div class="p-6 text-slate-400">No monitoring checks yet. Add one to get started!</div>
+              <div class="p-4 sm:p-6 text-slate-400 text-sm">No monitoring checks yet. Add one to get started!</div>
             </Show>
             <Show when={checks().length > 0}>
-              <table class="w-full">
+              <table class="w-full min-w-[500px]">
                 <thead class="bg-slate-800">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Target</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Interval</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden sm:table-cell">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden md:table-cell">Target</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden sm:table-cell">Interval</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800">
                   <For each={filteredChecks()} fallback={
                     <tr>
-                      <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-sm">
-                        No checks found
+                      <td colspan="6" class="px-4 py-6 text-center text-slate-400 text-sm">
+                        No checks match filters
                       </td>
                     </tr>
                   }>
                     {(check: any) => (
                       <tr class="hover:bg-slate-800/50">
-                        <td class="px-6 py-4 text-sm text-white">{check.name}</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">{check.check_type}</td>
-                        <td class="px-6 py-4 text-sm text-slate-400 truncate max-w-xs">
+                        <td class="px-4 py-3 text-sm text-white truncate max-w-[120px]">{check.name}</td>
+                        <td class="px-4 py-3 text-sm text-slate-300 hidden sm:table-cell">{check.check_type}</td>
+                        <td class="px-4 py-3 text-sm text-slate-400 truncate hidden md:table-cell max-w-[120px]">
                           {check.config?.url || check.config?.host || '-'}
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">{check.interval_seconds}s</td>
-                        <td class="px-6 py-4 text-sm">
-                          <span class={`px-2 py-1 rounded text-xs font-medium ${
+                        <td class="px-4 py-3 text-sm text-slate-300 hidden sm:table-cell">{check.interval_seconds}s</td>
+                        <td class="px-4 py-3">
+                          <span class={`px-2 py-0.5 rounded text-xs font-medium ${
                             check.enabled ? 'bg-green-900/50 text-green-200' : 'bg-gray-900/50 text-gray-400'
                           }`}>
                             {check.enabled ? 'Enabled' : 'Disabled'}
                           </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-right space-x-2">
-                          <button
-                            onClick={() => handleViewLogs(check.id)}
-                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            Logs
-                          </button>
-                          <button
-                            onClick={() => handleExecute(check.id)}
-                            disabled={execLoading()}
-                            class="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            {execLoading() ? "Running..." : "Execute Now"}
-                          </button>
-                          <button
-                            onClick={() => handleUpdate(check)}
-                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(check.id)}
-                            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            Delete
-                          </button>
+                        <td class="px-4 py-3">
+                          <div class="flex gap-1 sm:gap-2 justify-end flex-wrap">
+                            <button
+                              onClick={() => handleViewLogs(check.id)}
+                              class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              Logs
+                            </button>
+                            <button
+                              onClick={() => handleExecute(check.id)}
+                              disabled={execLoading()}
+                              class="px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              {execLoading() ? "..." : "Run"}
+                            </button>
+                            <button
+                              onClick={() => handleUpdate(check)}
+                              class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(check.id)}
+                              class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}

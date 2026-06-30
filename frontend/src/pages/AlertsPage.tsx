@@ -137,8 +137,8 @@ export default function AlertsPage() {
   return (
     <Layout>
       <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">Alert Rules</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white">Alert Rules</h1>
           <button
             onClick={() => {
               setShowForm(!showForm())
@@ -160,8 +160,8 @@ export default function AlertsPage() {
         </Show>
 
         {/* Filter bar */}
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div class="flex gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <input
               type="text"
               placeholder="Search alert rules..."
@@ -288,34 +288,35 @@ export default function AlertsPage() {
         <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
           <Show when={!loading()} fallback={<div class="p-6 text-slate-400">Loading...</div>}>
             <Show when={alerts().length === 0}>
-              <div class="p-6 text-slate-400">No alert rules configured yet</div>
+              <div class="p-4 sm:p-6 text-slate-400 text-sm">No alert rules configured yet</div>
             </Show>
             <Show when={alerts().length > 0}>
-              <table class="w-full">
+              <div class="overflow-x-auto">
+              <table class="w-full min-w-[500px]">
                 <thead class="bg-slate-800">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Condition</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Severity</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Threshold</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden sm:table-cell">Condition</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Severity</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden md:table-cell">Threshold</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800">
                   <For each={filteredAlerts()} fallback={
                     <tr>
-                      <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-sm">
-                        No alert rules found
-                      </td>
+                      <td colspan="6" class="px-4 py-6 text-center text-slate-400 text-sm">
+                      No alerts match filters
+                    </td>
                     </tr>
                   }>
-                    {(rule) => (
+                    {(rule: any) => (
                       <tr class="hover:bg-slate-800/50">
-                        <td class="px-6 py-4 text-sm text-white">{rule.name}</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">{rule.condition}</td>
-                        <td class="px-6 py-4 text-sm">
-                          <span class={`px-2 py-1 rounded text-xs font-medium ${
+                        <td class="px-4 py-3 text-sm text-white truncate max-w-[140px]">{rule.name}</td>
+                        <td class="px-4 py-3 text-sm text-slate-300 hidden sm:table-cell truncate max-w-[100px]">{rule.condition}</td>
+                        <td class="px-4 py-3 text-sm">
+                          <span class={`px-2 py-0.5 rounded text-xs font-medium ${
                             rule.severity === 'critical' ? 'bg-red-900/50 text-red-200' :
                             rule.severity === 'warning' ? 'bg-yellow-900/50 text-yellow-200' :
                             'bg-blue-900/50 text-blue-200'
@@ -323,33 +324,36 @@ export default function AlertsPage() {
                             {rule.severity}
                           </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">{rule.threshold || '-'}</td>
-                        <td class="px-6 py-4 text-sm">
-                          <span class={`px-2 py-1 rounded text-xs font-medium ${
+                        <td class="px-4 py-3 text-sm text-slate-300 hidden md:table-cell">{rule.threshold || '-'}</td>
+                        <td class="px-4 py-3 hidden sm:table-cell">
+                          <span class={`px-2 py-0.5 rounded text-xs font-medium ${
                             rule.enabled ? 'bg-green-900/50 text-green-200' : 'bg-gray-900/50 text-gray-400'
                           }`}>
                             {rule.enabled ? 'Enabled' : 'Disabled'}
                           </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-right space-x-2">
-                          <button
-                            onClick={() => handleUpdate(rule)}
-                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(rule.id)}
-                            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
-                          >
-                            Delete
-                          </button>
+                        <td class="px-4 py-3">
+                          <div class="flex gap-1 sm:gap-2 justify-end">
+                            <button
+                              onClick={() => handleUpdate(rule)}
+                              class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(rule.id)}
+                              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
                   </For>
                 </tbody>
               </table>
+              </div>
             </Show>
           </Show>
         </div>

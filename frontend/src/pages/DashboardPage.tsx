@@ -34,8 +34,8 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">Dashboard</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
           <div class="text-slate-400 text-sm">
             Welcome back, <span class="text-blue-400">{auth?.user?.email}</span>
           </div>
@@ -47,26 +47,26 @@ export default function DashboardPage() {
               {error()}
             </div>
           </Show>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-5">
               <div class="text-slate-400 text-sm uppercase tracking-wide">Total Assets</div>
               <div class="text-3xl font-bold text-white mt-2">{stats().assets}</div>
               <div class="text-slate-500 text-xs mt-1">Registered in CMDB</div>
             </div>
             
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-5">
               <div class="text-slate-400 text-sm uppercase tracking-wide">Healthy</div>
               <div class="text-3xl font-bold text-green-400 mt-2">{stats().assets}</div>
               <div class="text-slate-500 text-xs mt-1">All systems operational</div>
             </div>
             
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-5">
               <div class="text-slate-400 text-sm uppercase tracking-wide">Active Checks</div>
               <div class="text-3xl font-bold text-blue-400 mt-2">{stats().checks}</div>
               <div class="text-slate-500 text-xs mt-1">Monitoring enabled</div>
             </div>
             
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-5">
               <div class="text-slate-400 text-sm uppercase tracking-wide">Active Alerts</div>
               <div class="text-3xl font-bold text-red-400 mt-2">{stats().alerts}</div>
               <div class="text-slate-500 text-xs mt-1">Requires attention</div>

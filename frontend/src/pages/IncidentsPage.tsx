@@ -104,9 +104,9 @@ export default function IncidentsPage() {
   return (
     <Layout>
       <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">Alert Incidents</h1>
-          <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 class="text-2xl sm:text-3xl font-bold text-white">Alert Incidents</h1>
+          <div class="flex flex-wrap gap-1 sm:gap-2">
             <button
               onClick={() => handleFilterChange("all")}
               class={`px-4 py-2 rounded font-medium transition-colors ${filter() === "all" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}
@@ -141,8 +141,8 @@ export default function IncidentsPage() {
         </Show>
 
         {/* Filter bar */}
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div class="flex gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 sm:p-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <input
               type="text"
               placeholder="Search incidents..."
