@@ -21,7 +21,7 @@ export default function Layout(props: ParentProps) {
     { href: "/incidents", label: "Incidents" },
     { href: "/notifications", label: "Notifications" },
     { href: "/sla", label: "SLA" },
-    { href: "/topology", label: "Topology" },
+    // { href: "/topology", label: "Topology" }, // hidden — still error
     { href: "/logs", label: "Logs" },
     { href: "/docker", label: "🐳 Docker" },
     { href: "/help", label: "📚 Help" },
