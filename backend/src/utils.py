@@ -14,11 +14,16 @@ class UUIDEncoder(json.JSONEncoder):
 
 
 def json_response(data, status_code: int = 200) -> Response:
-    """Return a JSON response with proper serialization."""
+    """Return a JSON response with proper serialization + no-cache."""
     return Response(
         status_code=status_code,
         body=json.dumps(data, cls=UUIDEncoder),
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, private",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )
 
 

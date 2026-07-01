@@ -4,6 +4,7 @@ import { dockerApi } from "../../api/docker-api"
 interface Props {
   hostId: string
   hostName?: string
+  onAlertCount?: (count: number) => void
 }
 
 interface AlertRule {
@@ -33,17 +34,28 @@ const OPERATORS = [
   { value: "lte", label: "<=" },
 ]
 
+const BASE = "http://localhost:9080"
+
 export default function HostMonitor(props: Props) {
   const [data, setData] = createSignal<any>(null)
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal("")
-
-  // Alert rules
   const [alertRules, setAlertRules] = createSignal<AlertRule[]>([])
   const [loadingAlert, setLoadingAlert] = createSignal(false)
   const [showAddForm, setShowAddForm] = createSignal(false)
-  const [form, setForm] = createSignal({ name: "", metric: "cpu_percent", operator: "gt",
-    threshold: 80, duration_minutes: 5, cooldown_minutes: 10, enabled: true })
+  const [toast, setToast] = createSignal<{ msg: string; ok: boolean } | null>(null)
+  const [form, setForm] = createSignal({
+    name: "", metric: "cpu_percent", operator: "gt",
+    threshold: 80, duration_minutes: 5, cooldown_minutes: 10, enabled: true,
+  })
+
+  let toastTimer: any
+
+  const showToast = (msg: string, ok = true) => {
+    clearTimeout(toastTimer)
+    setToast({ msg, ok })
+    toastTimer = setTimeout(() => setToast(null), 3000)
+  }
 
   const fetchMonitor = async () => {
     setLoading(true)
@@ -62,35 +74,44 @@ export default function HostMonitor(props: Props) {
     if (!props.hostId) return
     setLoadingAlert(true)
     try {
-      const res = await fetch(`/hosts/${props.hostId}/alerts/rules`)
+      const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      setAlertRules(Array.isArray(data) ? data : [])
+      const d = await res.json()
+      const rules = Array.isArray(d) ? d : []
+      setAlertRules(rules)
+      props.onAlertCount?.(rules.filter((r: AlertRule) => r.enabled).length)
     } catch (e: any) {
-      console.error("[AlertRules] fetch error:", e)
-    } finally { setLoadingAlert(false) }
+      console.error("[AlertRules] fetch:", e)
+    } finally {
+      setLoadingAlert(false)
+    }
   }
 
-  const BASE = `http://localhost:9080`
-
   createEffect(() => {
-    if (props.hostId) { fetchMonitor(); fetchAlertRules() }
+    if (props.hostId) {
+      fetchMonitor()
+      fetchAlertRules()
+    }
   })
 
   const addRule = async () => {
     const f = form()
+    if (!f.name.trim()) { showToast("Name required", false); return }
     try {
       const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...f, host_id: props.hostId, channel_ids: [] }),
       })
-      if (!res.ok) throw new Error(`addRule HTTP ${res.status}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setShowAddForm(false)
       setForm({ name: "", metric: "cpu_percent", operator: "gt",
         threshold: 80, duration_minutes: 5, cooldown_minutes: 10, enabled: true })
+      showToast("Rule added ✅")
       await fetchAlertRules()
-    } catch (e: any) { console.error("[AlertRules] add error:", e) }
+    } catch (e: any) {
+      showToast(`Error: ${e.message}`, false)
+    }
   }
 
   const toggleRule = async (ruleId: string, enabled: boolean) => {
@@ -100,43 +121,45 @@ export default function HostMonitor(props: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled }),
       })
-      if (!res.ok) throw new Error(`toggle HTTP ${res.status}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      showToast(enabled ? "Rule disabled" : "Rule enabled")
       await fetchAlertRules()
-    } catch (e: any) { console.error("[AlertRules] toggle error:", e) }
+    } catch (e: any) {
+      showToast(`Error: ${e.message}`, false)
+    }
   }
 
   const deleteRule = async (ruleId: string) => {
     try {
       const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules/${ruleId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error(`delete HTTP ${res.status}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      showToast("Rule deleted")
       await fetchAlertRules()
-    } catch (e: any) { console.error("[AlertRules] delete error:", e) }
+    } catch (e: any) {
+      showToast(`Error: ${e.message}`, false)
+    }
   }
 
-  const parseDf = (key: string): { size: string; used: string; avail: string; usePct: string } | null => {
-    const raw = data()?.[key]?.stdout || ""
-    const parts = raw.trim().split(/\s+/)
-    if (parts.length < 5) return null
-    return { size: parts[1], used: parts[2], avail: parts[3], usePct: parts[4] }
-  }
-
-  const parseMem = (key: string): { total: string; used: string; free: string; avail: string } | null => {
-    const raw = data()?.[key]?.stdout || ""
-    const lines = raw.split("\n")
-    const memLine = lines.find((l: string) => l.startsWith("Mem:"))
-    if (!memLine) return null
-    const parts = memLine.trim().split(/\s+/)
-    return { total: parts[1], used: parts[2], free: parts[3], avail: parts[6] || "?" }
-  }
-
-  const getValue = (key: string): string => {
-    const raw = data()?.[key]?.stdout || ""
-    return raw.replace(/^__\w+__\n?/, "").trim()
-  }
+  const metricLabel = (m: string) => METRICS.find((x) => x.value === m)?.label || m
+  const severityColor = (s: string) =>
+    s === "critical" ? "bg-red-900 text-red-300" :
+    s === "warning" ? "bg-yellow-900 text-yellow-300" :
+    "bg-blue-900 text-blue-300"
 
   return (
     <div class="space-y-4">
-      {/* Header + Refresh */}
+      {/* Toast */}
+      <Show when={toast()}>
+        <div
+          class={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-sm shadow-lg transition-opacity ${
+            toast()!.ok ? "bg-green-800 text-green-200" : "bg-red-800 text-red-200"
+          }`}
+        >
+          {toast()!.msg}
+        </div>
+      </Show>
+
+      {/* Monitor Data */}
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-100">
           {props.hostName || "Host"} — Monitor
@@ -144,13 +167,13 @@ export default function HostMonitor(props: Props) {
         <button
           onClick={fetchMonitor}
           disabled={loading()}
-          class={`px-3 py-1 text-sm rounded ${
+          class={`px-3 py-1 text-sm rounded transition ${
             loading()
               ? "bg-gray-600 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-500"
-          } text-white transition`}
+          } text-white`}
         >
-          {loading() ? "Loading..." : "⟳ Refresh"}
+          {loading() ? "..." : "⟳ Refresh"}
         </button>
       </div>
 
@@ -159,83 +182,24 @@ export default function HostMonitor(props: Props) {
       </Show>
 
       <Show when={!loading() && data()}>
-        {/* Summary cards */}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* cards same as before */}
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Uptime</div>
-            <div class="text-sm text-gray-100">{getValue("echo '__UPTIME__' && uptime 2>/dev/null")}</div>
+            <div class="text-sm text-gray-100">{(data()?.echo__UPTIME__ || "").replace(/[^\S\n]*\n/, "").trim()}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">CPU</div>
-            <div class="text-sm text-gray-100">{getValue("echo '__NPROC__' && nproc 2>/dev/null")} cores</div>
-            <div class="text-xs text-gray-500">
-              {getValue("echo '__LSCPU__' && lscpu 2>/dev/null | grep -E 'Model name|CPU\\(s\\)|Thread|Core|Socket'")
-                .split("\n")
-                .filter((l: string) => l.includes("Model name"))
-                .map((l: string) => l.replace(/.*:\s*/, ""))
-                .join("")}
-            </div>
-            <div class="text-xs text-gray-500">
-              Load: {getValue("echo '__LOADAVG__' && cat /proc/loadavg 2>/dev/null")}
-            </div>
+            <div class="text-sm text-gray-100">{(data()?.echo__NPROC__ || "").trim()} cores</div>
+            <div class="text-xs text-gray-500">Load: {(data()?.echo__LOADAVG__ || "").trim()}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Memory</div>
-            <Show when={parseMem("free -h 2>/dev/null")} fallback={<div class="text-sm text-gray-500">N/A</div>}>
-              {(m) => (
-                <>
-                  <div class="text-sm text-gray-100">{m().used} / {m().total}</div>
-                  <div class="text-xs text-gray-500">Avail: {m().avail}</div>
-                </>
-              )}
-            </Show>
+            <div class="text-sm text-gray-100">{(data()?.["free -h 2>/dev/null"]?.stdout || "").split("\n").find((l: string) => l.startsWith("Mem:"))?.trim() || "N/A"}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Storage</div>
-            <Show when={parseDf("df -h --total 2>/dev/null | tail -1")} fallback={<div class="text-sm text-gray-500">N/A</div>}>
-              {(d) => (
-                <>
-                  <div class="text-sm text-gray-100">{d().used} / {d().size}</div>
-                  <div class="text-xs text-gray-500">{d().usePct} used</div>
-                </>
-              )}
-            </Show>
-          </div>
-        </div>
-
-        {/* Top CPU processes */}
-        <div>
-          <h4 class="text-sm font-medium text-gray-300 mb-2">Top CPU Processes</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-gray-300">
-              <thead>
-                <tr class="text-left text-gray-500 uppercase border-b border-gray-700">
-                  <th class="py-1 pr-2">USER</th><th class="py-1 pr-2">PID</th>
-                  <th class="py-1 pr-2">%CPU</th><th class="py-1 pr-2">%MEM</th>
-                  <th class="py-1 pr-2">COMMAND</th>
-                </tr>
-              </thead>
-              <tbody>
-                <For each={
-                  getValue("echo '__TOP_CPU__' && ps aux --sort=-%cpu 2>/dev/null | head -10")
-                    .split("\n").slice(1).filter(Boolean)
-                }>
-                  {(line) => {
-                    const parts = line.trim().split(/\s+/)
-                    if (parts.length < 11) return null
-                    return (
-                      <tr class="border-b border-gray-800 hover:bg-gray-800/40">
-                        <td class="py-1 pr-2">{parts[0]}</td>
-                        <td class="py-1 pr-2">{parts[1]}</td>
-                        <td class="py-1 pr-2 text-yellow-400">{parts[2]}</td>
-                        <td class="py-1 pr-2">{parts[3]}</td>
-                        <td class="py-1 truncate max-w-[300px]" title={parts.slice(10).join(" ")}>{parts.slice(10).join(" ")}</td>
-                      </tr>
-                    )
-                  }}
-                </For>
-              </tbody>
-            </table>
+            <div class="text-sm text-gray-100">{(data()?.["df -h --total 2>/dev/null | tail -1"]?.stdout || "").trim().split(/\s+/).slice(1,3).join(" / ") || "N/A"}</div>
           </div>
         </div>
       </Show>
@@ -244,115 +208,157 @@ export default function HostMonitor(props: Props) {
         <div class="text-center text-gray-500 py-8">Loading monitor data...</div>
       </Show>
 
-      {/* ════ Alert Rules Section (inline) ════ */}
+      {/* ════ ALERT THRESHOLDS ════ */}
       <div class="border-t border-gray-700 pt-4 mt-4">
         <div class="flex items-center justify-between mb-3">
-          <h4 class="text-sm font-medium text-gray-300">Alert Thresholds</h4>
+          <h4 class="text-sm font-medium text-gray-300">
+            Alert Thresholds
+            <Show when={alertRules().length > 0}>
+              <span class="ml-2 px-1.5 py-0.5 text-xs rounded bg-blue-900 text-blue-300">{alertRules().length}</span>
+            </Show>
+          </h4>
           <button
-            onClick={() => setShowAddForm(true)}
-            class="px-3 py-1 text-xs rounded bg-green-700 hover:bg-green-600 text-white transition"
-          >+ Add Rule</button>
+            onClick={() => setShowAddForm(!showAddForm())}
+            class={`px-3 py-1 text-xs rounded transition ${
+              showAddForm()
+                ? "bg-gray-600 hover:bg-gray-500"
+                : "bg-green-700 hover:bg-green-600"
+            } text-white`}
+          >
+            {showAddForm() ? "✕ Cancel" : "+ Add Rule"}
+          </button>
         </div>
 
+        {/* Add Form */}
         <Show when={showAddForm()}>
-          <div class="p-3 mb-3 bg-gray-800 rounded border border-gray-600 space-y-2">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div>
-                <label class="text-xs text-gray-400">Rule Name</label>
-                <input type="text" value={form().name}
+          <div class="p-4 mb-3 bg-gray-800 rounded border border-gray-600 space-y-3">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="md:col-span-2">
+                <label class="text-xs text-gray-400 mb-1 block">Rule Name</label>
+                <input
+                  type="text" value={form().name}
                   onInput={(e) => setForm({ ...form(), name: e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200" />
+                  placeholder="e.g. CPU High Alert"
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500"
+                />
               </div>
               <div>
-                <label class="text-xs text-gray-400">Metric</label>
-                <select value={form().metric}
+                <label class="text-xs text-gray-400 mb-1 block">Metric</label>
+                <select
+                  value={form().metric}
                   onChange={(e) => setForm({ ...form(), metric: e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200">
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200"
+                >
                   <For each={METRICS}>{(m) => <option value={m.value}>{m.label}</option>}</For>
                 </select>
               </div>
               <div>
-                <label class="text-xs text-gray-400">Operator</label>
-                <select value={form().operator}
+                <label class="text-xs text-gray-400 mb-1 block">Condition</label>
+                <select
+                  value={form().operator}
                   onChange={(e) => setForm({ ...form(), operator: e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200">
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200"
+                >
                   <For each={OPERATORS}>{(o) => <option value={o.value}>{o.label}</option>}</For>
                 </select>
               </div>
               <div>
-                <label class="text-xs text-gray-400">Threshold (%)</label>
-                <input type="number" value={form().threshold}
+                <label class="text-xs text-gray-400 mb-1 block">Threshold (%)</label>
+                <input
+                  type="number" value={form().threshold}
                   onInput={(e) => setForm({ ...form(), threshold: +e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200" />
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200"
+                />
               </div>
               <div>
-                <label class="text-xs text-gray-400">Duration (min)</label>
-                <input type="number" value={form().duration_minutes}
+                <label class="text-xs text-gray-400 mb-1 block">Duration (min)</label>
+                <input
+                  type="number" value={form().duration_minutes}
                   onInput={(e) => setForm({ ...form(), duration_minutes: +e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200" />
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200"
+                />
               </div>
               <div>
-                <label class="text-xs text-gray-400">Cooldown (min)</label>
-                <input type="number" value={form().cooldown_minutes}
+                <label class="text-xs text-gray-400 mb-1 block">Cooldown (min)</label>
+                <input
+                  type="number" value={form().cooldown_minutes}
                   onInput={(e) => setForm({ ...form(), cooldown_minutes: +e.currentTarget.value })}
-                  class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200" />
+                  class="w-full px-2 py-1.5 text-xs bg-gray-700 border border-gray-600 rounded text-gray-200"
+                />
               </div>
             </div>
             <div class="flex gap-2 pt-1">
-              <button onClick={addRule}
-                class="px-3 py-1 text-xs rounded bg-green-600 hover:bg-green-500 text-white">Save</button>
-              <button onClick={() => setShowAddForm(false)}
-                class="px-3 py-1 text-xs rounded bg-gray-600 hover:bg-gray-500 text-gray-200">Cancel</button>
+              <button
+                onClick={addRule}
+                class="px-4 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white font-medium"
+              >
+                Save Rule
+              </button>
+              <button
+                onClick={() => setShowAddForm(false)}
+                class="px-4 py-1.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-gray-200"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </Show>
 
+        {/* Loading */}
         <Show when={loadingAlert()}>
-          <div class="text-xs text-gray-500">Loading rules...</div>
+          <div class="text-xs text-gray-500 py-2">Loading rules...</div>
         </Show>
 
+        {/* Empty */}
         <Show when={!loadingAlert() && alertRules().length === 0}>
-          <div class="text-xs text-gray-500 italic">No alert thresholds configured yet.</div>
+          <div class="text-xs text-gray-500 italic py-4 text-center border border-dashed border-gray-700 rounded">
+            No alert thresholds configured. Click "+ Add Rule" to create one.
+          </div>
         </Show>
 
+        {/* Rule List */}
         <Show when={alertRules().length > 0}>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs text-gray-300">
-              <thead>
-                <tr class="text-left text-gray-500 uppercase border-b border-gray-700">
-                  <th class="py-1 pr-2">Name</th><th class="py-1 pr-2">Metric</th>
-                  <th class="py-1 pr-2">Cond</th><th class="py-1 pr-2">Thresh</th>
-                  <th class="py-1 pr-2">Duration</th><th class="py-1 pr-2">Status</th>
-                  <th class="py-1 pr-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <For each={alertRules()}>
-                  {(rule) => (
-                    <tr class="border-b border-gray-800 hover:bg-gray-800/40">
-                      <td class="py-1 pr-2">{rule.name}</td>
-                      <td class="py-1 pr-2">{rule.metric}</td>
-                      <td class="py-1 pr-2">{rule.operator}</td>
-                      <td class="py-1 pr-2">{rule.threshold}%</td>
-                      <td class="py-1 pr-2">{rule.duration_minutes}m</td>
-                      <td class="py-1 pr-2">
-                        <span class={`px-1.5 py-0.5 rounded text-xs ${rule.enabled ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400'}`}>
-                          {rule.enabled ? "On" : "Off"}
-                        </span>
-                      </td>
-                      <td class="py-1 pr-2 text-right whitespace-nowrap">
-                        <button onClick={() => toggleRule(rule.id, rule.enabled)}
-                          class="text-xs text-blue-400 hover:text-blue-300 mr-2"
-                          title={rule.enabled ? "Disable" : "Enable"}>{rule.enabled ? "✕" : "✓"}</button>
-                        <button onClick={() => deleteRule(rule.id)}
-                          class="text-xs text-red-400 hover:text-red-300"
-                          title="Delete">🗑</button>
-                      </td>
-                    </tr>
-                  )}
-                </For>
-              </tbody>
-            </table>
+          <div class="space-y-2">
+            <For each={alertRules()}>
+              {(rule) => (
+                <div class="flex items-center justify-between p-3 bg-gray-800/40 rounded border border-gray-700 hover:border-gray-600 transition">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-medium text-gray-200">{rule.name}</span>
+                      <span class={`px-1.5 py-0.5 text-xs rounded ${severityColor(rule.severity)}`}>
+                        {rule.severity}
+                      </span>
+                      <span class={`px-1.5 py-0.5 text-xs rounded ${
+                        rule.enabled ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-400"
+                      }`}>
+                        {rule.enabled ? "Active" : "Disabled"}
+                      </span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                      {metricLabel(rule.metric)} {rule.operator} {rule.threshold}% · sustained {rule.duration_minutes}m · cooldown {rule.cooldown_minutes}m
+                    </div>
+                  </div>
+                  <div class="flex gap-1 ml-3 flex-shrink-0">
+                    <button
+                      onClick={() => toggleRule(rule.id, rule.enabled)}
+                      class={`px-2 py-1 text-xs rounded transition ${
+                        rule.enabled
+                          ? "bg-yellow-700 hover:bg-yellow-600 text-yellow-200"
+                          : "bg-green-700 hover:bg-green-600 text-green-200"
+                      }`}
+                    >
+                      {rule.enabled ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      onClick={() => deleteRule(rule.id)}
+                      class="px-2 py-1 text-xs rounded bg-red-800 hover:bg-red-700 text-red-200 transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </For>
           </div>
         </Show>
       </div>
