@@ -17,12 +17,12 @@ async def cors_middleware(request: Request):
         return Response(
             status_code=204,
             headers={
-                b"Access-Control-Allow-Origin": b"*",
-                b"Access-Control-Allow-Methods": b"GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                b"Access-Control-Allow-Headers": b"Content-Type, Authorization, X-Requested-With",
-                b"Access-Control-Max-Age": b"86400",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+                "Access-Control-Max-Age": "86400",
             },
-            description=""
+            description="",
         )
     return request
 
@@ -49,11 +49,12 @@ async def options_handler(request: Request):
     return Response(
         status_code=204,
         headers={
-            b"Access-Control-Allow-Origin": b"*",
-            b"Access-Control-Allow-Methods": b"GET, POST, PUT, DELETE, OPTIONS",
-            b"Access-Control-Allow-Headers": b"Content-Type, Authorization"
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+            "Access-Control-Max-Age": "86400",
         },
-        description=""
+        description="",
     )
 
 @app.get("/health")
