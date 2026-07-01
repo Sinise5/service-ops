@@ -184,6 +184,17 @@ async def test_credentials(request: Request):
         return json_response({"status": "offline", "error": str(e)}, 200)
 
 
+async def host_monitor(request: Request):
+    """GET /docker/hosts/:host_id/monitor — storage, cpu, mem, uptime, docker df."""
+    try:
+        host_id = request.path_params.get("host_id")
+        service = _get_service(request, host_id)
+        result = await service.monitor()
+        return json_response(result, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 500)
+
+
 # ═══════════════════════════════════════════════
 #  CONTAINER OPERATIONS
 # ═══════════════════════════════════════════════

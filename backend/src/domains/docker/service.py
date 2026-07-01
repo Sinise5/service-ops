@@ -481,3 +481,7 @@ class DockerService:
     async def test_connection(self) -> dict:
         ssh = await self._get_ssh_client()
         return await ssh.test_connection()
+
+    async def monitor(self) -> dict:
+        ssh = await self._get_ssh_client()
+        return await ssh.monitor()

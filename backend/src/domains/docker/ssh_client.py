@@ -75,10 +75,10 @@ class SSHClient:
                 raise SSHError(f"Invalid SSH key: {e}")
             raise SSHError(f"SSH connection failed: {e}")
 
-    async def exec(
+    async def exec_async(
         self,
         command: str,
-        timeout: int = 30,
+        timeout: int = 60,
         cwd: Optional[str] = None,
     ) -> tuple[str, str, int]:
         if cwd:
@@ -92,6 +92,30 @@ class SSHClient:
             stdout = result.stdout if result.stdout else ""
             stderr = result.stderr if result.stderr else ""
             return stdout, stderr, result.exit_status
+
+    async def exec_multi(
+        self,
+        commands: list[str],
+        timeout: int = 60,
+    ) -> dict[str, dict]:
+        """Run multiple commands in a single SSH session."""
+        results = {}
+        async with self.connection() as conn:
+            for cmd in commands:
+                try:
+                    r = await conn.run(cmd, timeout=timeout, check=False)
+                    results[cmd] = {
+                        "stdout": r.stdout or "",
+                        "stderr": r.stderr or "",
+                        "exit_code": r.exit_status,
+                    }
+                except Exception as e:
+                    results[cmd] = {
+                        "stdout": "",
+                        "stderr": str(e),
+                        "exit_code": -1,
+                    }
+        return results
 
     async def exec_stream(self, command: str, cwd: Optional[str] = None):
         if cwd:
@@ -114,6 +138,28 @@ class SSHClient:
             return {"status": "offline", "error": str(e)}
         except Exception as e:
             return {"status": "offline", "error": f"Unexpected error: {e}"}
+
+    # ─────────────────────────────────────────────
+    # Monitor helpers
+    # ─────────────────────────────────────────────
+    async def monitor(self) -> dict:
+        """Gather host: storage, memory, cpu, uptime, docker disk usage."""
+        cmds = [
+            "df -h --total 2>/dev/null | tail -1",
+            "free -h 2>/dev/null",
+            "echo '__NPROC__' && nproc 2>/dev/null",
+            "echo '__UPTIME__' && uptime 2>/dev/null",
+            "echo '__LSCPU__' && lscpu 2>/dev/null | grep -E 'Model name|CPU\\(s\\)|Thread|Core|Socket'",
+            "echo '__DOCKER_DF__' && docker system df 2>/dev/null",
+            "echo '__TOP_CPU__' && ps aux --sort=-%cpu 2>/dev/null | head -10",
+            "echo '__TOP_MEM__' && ps aux --sort=-%mem 2>/dev/null | head -10",
+            "echo '__LOADAVG__' && cat /proc/loadavg 2>/dev/null",
+        ]
+        raw = await self.exec_multi(cmds, timeout=30)
+        return raw
+
+    # legacy alias
+    exec = exec_async
 
 
 # ─────────────────────────────────────────────

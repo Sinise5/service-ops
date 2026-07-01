@@ -34,6 +34,7 @@ export const dockerApi = {
     method: "POST",
     body: JSON.stringify(data),
   }),
+  monitorHost: (id: string) => request(`/docker/hosts/${id}/monitor`, { method: "GET" }),
 
   // Containers
   listContainers: (hostId: string, all = true) => request(`/docker/hosts/${hostId}/containers?all=${all}`),
