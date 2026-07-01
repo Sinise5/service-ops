@@ -36,6 +36,14 @@ const OPERATORS = [
 
 const BASE = "http://localhost:9080"
 
+/** Extract stdout from monitor command result */
+function stdout(val: any): string {
+  if (!val) return ""
+  if (typeof val === "string") return val
+  if (val.stdout) return val.stdout
+  return JSON.stringify(val)
+}
+
 export default function HostMonitor(props: Props) {
   const [data, setData] = createSignal<any>(null)
   const [loading, setLoading] = createSignal(false)
@@ -103,7 +111,10 @@ export default function HostMonitor(props: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...f, host_id: props.hostId, channel_ids: [] }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}))
+        throw new Error(errBody.error || `HTTP ${res.status}`)
+      }
       setShowAddForm(false)
       setForm({ name: "", metric: "cpu_percent", operator: "gt",
         threshold: 80, duration_minutes: 5, cooldown_minutes: 10, enabled: true })
@@ -122,7 +133,7 @@ export default function HostMonitor(props: Props) {
         body: JSON.stringify({ enabled: !enabled }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      showToast(enabled ? "Rule disabled" : "Rule enabled")
+      showToast(enabled ? "Disabled" : "Enabled")
       await fetchAlertRules()
     } catch (e: any) {
       showToast(`Error: ${e.message}`, false)
@@ -133,7 +144,7 @@ export default function HostMonitor(props: Props) {
     try {
       const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules/${ruleId}`, { method: "DELETE" })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      showToast("Rule deleted")
+      showToast("Deleted")
       await fetchAlertRules()
     } catch (e: any) {
       showToast(`Error: ${e.message}`, false)
@@ -145,6 +156,20 @@ export default function HostMonitor(props: Props) {
     s === "critical" ? "bg-red-900 text-red-300" :
     s === "warning" ? "bg-yellow-900 text-yellow-300" :
     "bg-blue-900 text-blue-300"
+
+  // ── Derived monitor values ──
+  const uptime = () => stdout(data()?.["echo '__UPTIME__' && uptime 2>/dev/null"])
+  const nproc = () => stdout(data()?.["echo '__NPROC__' && nproc 2>/dev/null"])
+  const loadavg = () => stdout(data()?.["echo '__LOADAVG__' && cat /proc/loadavg 2>/dev/null"])
+  const memLine = () => {
+    const mem = stdout(data()?.["free -h 2>/dev/null"])
+    return mem.split("\n").find((l: string) => l.startsWith("Mem:"))?.trim() || "N/A"
+  }
+  const dfLine = () => {
+    const df = stdout(data()?.["df -h --total 2>/dev/null | tail -1"])
+    const parts = df.trim().split(/\s+/)
+    return parts.length >= 3 ? `${parts.slice(1, 3).join(" / ")}` : "N/A"
+  }
 
   return (
     <div class="space-y-4">
@@ -168,9 +193,7 @@ export default function HostMonitor(props: Props) {
           onClick={fetchMonitor}
           disabled={loading()}
           class={`px-3 py-1 text-sm rounded transition ${
-            loading()
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-500"
+            loading() ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500"
           } text-white`}
         >
           {loading() ? "..." : "⟳ Refresh"}
@@ -183,23 +206,22 @@ export default function HostMonitor(props: Props) {
 
       <Show when={!loading() && data()}>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* cards same as before */}
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Uptime</div>
-            <div class="text-sm text-gray-100">{(data()?.echo__UPTIME__ || "").replace(/[^\S\n]*\n/, "").trim()}</div>
+            <div class="text-sm text-gray-100 whitespace-pre-line">{uptime().replace(/^__UPTIME__\s*\n?/, "").trim()}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">CPU</div>
-            <div class="text-sm text-gray-100">{(data()?.echo__NPROC__ || "").trim()} cores</div>
-            <div class="text-xs text-gray-500">Load: {(data()?.echo__LOADAVG__ || "").trim()}</div>
+            <div class="text-sm text-gray-100">{nproc().replace(/^__NPROC__\s*\n?/, "").trim()} cores</div>
+            <div class="text-xs text-gray-500">Load: {loadavg().replace(/^__LOADAVG__\s*\n?/, "").trim()}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Memory</div>
-            <div class="text-sm text-gray-100">{(data()?.["free -h 2>/dev/null"]?.stdout || "").split("\n").find((l: string) => l.startsWith("Mem:"))?.trim() || "N/A"}</div>
+            <div class="text-sm text-gray-100">{memLine()}</div>
           </div>
           <div class="p-3 bg-gray-800/60 rounded border border-gray-700">
             <div class="text-xs text-gray-400 uppercase mb-1">Storage</div>
-            <div class="text-sm text-gray-100">{(data()?.["df -h --total 2>/dev/null | tail -1"]?.stdout || "").trim().split(/\s+/).slice(1,3).join(" / ") || "N/A"}</div>
+            <div class="text-sm text-gray-100">{dfLine()}</div>
           </div>
         </div>
       </Show>
@@ -220,9 +242,7 @@ export default function HostMonitor(props: Props) {
           <button
             onClick={() => setShowAddForm(!showAddForm())}
             class={`px-3 py-1 text-xs rounded transition ${
-              showAddForm()
-                ? "bg-gray-600 hover:bg-gray-500"
-                : "bg-green-700 hover:bg-green-600"
+              showAddForm() ? "bg-gray-600 hover:bg-gray-500" : "bg-green-700 hover:bg-green-600"
             } text-white`}
           >
             {showAddForm() ? "✕ Cancel" : "+ Add Rule"}
@@ -288,35 +308,26 @@ export default function HostMonitor(props: Props) {
               </div>
             </div>
             <div class="flex gap-2 pt-1">
-              <button
-                onClick={addRule}
-                class="px-4 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white font-medium"
-              >
+              <button onClick={addRule} class="px-4 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white font-medium">
                 Save Rule
               </button>
-              <button
-                onClick={() => setShowAddForm(false)}
-                class="px-4 py-1.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-gray-200"
-              >
+              <button onClick={() => setShowAddForm(false)} class="px-4 py-1.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-gray-200">
                 Cancel
               </button>
             </div>
           </div>
         </Show>
 
-        {/* Loading */}
         <Show when={loadingAlert()}>
           <div class="text-xs text-gray-500 py-2">Loading rules...</div>
         </Show>
 
-        {/* Empty */}
         <Show when={!loadingAlert() && alertRules().length === 0}>
           <div class="text-xs text-gray-500 italic py-4 text-center border border-dashed border-gray-700 rounded">
             No alert thresholds configured. Click "+ Add Rule" to create one.
           </div>
         </Show>
 
-        {/* Rule List */}
         <Show when={alertRules().length > 0}>
           <div class="space-y-2">
             <For each={alertRules()}>
@@ -325,12 +336,8 @@ export default function HostMonitor(props: Props) {
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                       <span class="text-sm font-medium text-gray-200">{rule.name}</span>
-                      <span class={`px-1.5 py-0.5 text-xs rounded ${severityColor(rule.severity)}`}>
-                        {rule.severity}
-                      </span>
-                      <span class={`px-1.5 py-0.5 text-xs rounded ${
-                        rule.enabled ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-400"
-                      }`}>
+                      <span class={`px-1.5 py-0.5 text-xs rounded ${severityColor(rule.severity)}`}>{rule.severity}</span>
+                      <span class={`px-1.5 py-0.5 text-xs rounded ${rule.enabled ? "bg-green-900 text-green-300" : "bg-gray-700 text-gray-400"}`}>
                         {rule.enabled ? "Active" : "Disabled"}
                       </span>
                     </div>
@@ -342,17 +349,12 @@ export default function HostMonitor(props: Props) {
                     <button
                       onClick={() => toggleRule(rule.id, rule.enabled)}
                       class={`px-2 py-1 text-xs rounded transition ${
-                        rule.enabled
-                          ? "bg-yellow-700 hover:bg-yellow-600 text-yellow-200"
-                          : "bg-green-700 hover:bg-green-600 text-green-200"
+                        rule.enabled ? "bg-yellow-700 hover:bg-yellow-600 text-yellow-200" : "bg-green-700 hover:bg-green-600 text-green-200"
                       }`}
                     >
                       {rule.enabled ? "Disable" : "Enable"}
                     </button>
-                    <button
-                      onClick={() => deleteRule(rule.id)}
-                      class="px-2 py-1 text-xs rounded bg-red-800 hover:bg-red-700 text-red-200 transition"
-                    >
+                    <button onClick={() => deleteRule(rule.id)} class="px-2 py-1 text-xs rounded bg-red-800 hover:bg-red-700 text-red-200 transition">
                       Delete
                     </button>
                   </div>
