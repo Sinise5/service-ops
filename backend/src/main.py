@@ -10,6 +10,22 @@ from .utils import UUIDEncoder
 
 app = Robyn(__file__)
 
+@app.before_request()
+async def cors_middleware(request: Request):
+    """Handle CORS preflight for ALL routes including parameterized ones"""
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=204,
+            headers={
+                b"Access-Control-Allow-Origin": b"*",
+                b"Access-Control-Allow-Methods": b"GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                b"Access-Control-Allow-Headers": b"Content-Type, Authorization, X-Requested-With",
+                b"Access-Control-Max-Age": b"86400",
+            },
+            description=""
+        )
+    return request
+
 # CORS helper
 def cors_response(data, status_code=200):
     """Return Response with CORS headers + datetime/UUID serialization"""

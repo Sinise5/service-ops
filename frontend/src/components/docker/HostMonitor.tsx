@@ -59,13 +59,19 @@ export default function HostMonitor(props: Props) {
   }
 
   const fetchAlertRules = async () => {
+    if (!props.hostId) return
     setLoadingAlert(true)
     try {
-      const res = await fetch(`http://localhost:9080/hosts/${props.hostId}/alerts/rules`)
-      setAlertRules(await res.json())
-    } catch (e) { /* ignore */ }
-    finally { setLoadingAlert(false) }
+      const res = await fetch(`/hosts/${props.hostId}/alerts/rules`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setAlertRules(Array.isArray(data) ? data : [])
+    } catch (e: any) {
+      console.error("[AlertRules] fetch error:", e)
+    } finally { setLoadingAlert(false) }
   }
+
+  const BASE = `http://localhost:9080`
 
   createEffect(() => {
     if (props.hostId) { fetchMonitor(); fetchAlertRules() }
@@ -74,34 +80,37 @@ export default function HostMonitor(props: Props) {
   const addRule = async () => {
     const f = form()
     try {
-      await fetch(`http://localhost:9080/hosts/${props.hostId}/alerts/rules`, {
+      const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...f, host_id: props.hostId, channel_ids: [] }),
       })
+      if (!res.ok) throw new Error(`addRule HTTP ${res.status}`)
       setShowAddForm(false)
       setForm({ name: "", metric: "cpu_percent", operator: "gt",
         threshold: 80, duration_minutes: 5, cooldown_minutes: 10, enabled: true })
       await fetchAlertRules()
-    } catch (e) { /* ignore */ }
+    } catch (e: any) { console.error("[AlertRules] add error:", e) }
   }
 
   const toggleRule = async (ruleId: string, enabled: boolean) => {
     try {
-      await fetch(`http://localhost:9080/hosts/${props.hostId}/alerts/rules/${ruleId}/toggle`, {
+      const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules/${ruleId}/toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled }),
       })
+      if (!res.ok) throw new Error(`toggle HTTP ${res.status}`)
       await fetchAlertRules()
-    } catch (e) { /* ignore */ }
+    } catch (e: any) { console.error("[AlertRules] toggle error:", e) }
   }
 
   const deleteRule = async (ruleId: string) => {
     try {
-      await fetch(`http://localhost:9080/hosts/${props.hostId}/alerts/rules/${ruleId}`, { method: "DELETE" })
+      const res = await fetch(`${BASE}/hosts/${props.hostId}/alerts/rules/${ruleId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error(`delete HTTP ${res.status}`)
       await fetchAlertRules()
-    } catch (e) { /* ignore */ }
+    } catch (e: any) { console.error("[AlertRules] delete error:", e) }
   }
 
   const parseDf = (key: string): { size: string; used: string; avail: string; usePct: string } | null => {
