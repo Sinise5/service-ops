@@ -4,6 +4,68 @@ from datetime import datetime
 from typing import Optional
 
 
+class HostAlertRuleCreate(BaseModel):
+    host_id: UUID
+    name: str
+    metric: str  # cpu_percent, memory_percent, disk_used_percent
+    operator: str = "gt"  # gt, lt, gte, lte
+    threshold: float
+    duration_minutes: int = 5
+    cooldown_minutes: int = 10
+    enabled: bool = True
+    severity: str = "warning"
+    channel_ids: list[str] = []
+
+    @model_validator(mode='before')
+    @classmethod
+    def empty_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: None if v == '' else v for k, v in data.items()}
+        return data
+
+
+class HostAlertRuleUpdate(BaseModel):
+    name: Optional[str] = None
+    metric: Optional[str] = None
+    operator: Optional[str] = None
+    threshold: Optional[float] = None
+    duration_minutes: Optional[int] = None
+    cooldown_minutes: Optional[int] = None
+    enabled: Optional[bool] = None
+    severity: Optional[str] = None
+    channel_ids: Optional[list[str]] = None
+
+
+class HostAlertRuleResponse(BaseModel):
+    id: UUID
+    host_id: UUID
+    name: str
+    metric: str
+    operator: str
+    threshold: float
+    duration_minutes: int
+    cooldown_minutes: int
+    severity: str
+    enabled: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class HostAlertIncidentResponse(BaseModel):
+    id: UUID
+    rule_id: UUID
+    rule_name: str
+    host_id: UUID
+    host_name: Optional[str]
+    metric: str
+    value: float
+    threshold: float
+    status: str
+    severity: str
+    triggered_at: datetime
+    resolved_at: Optional[datetime]
+
+
 class AlertRuleCreate(BaseModel):
     check_id: Optional[UUID] = None
     name: str

@@ -4,7 +4,9 @@ from robyn import Request
 from ...utils import get_header
 from robyn.responses import Response
 from .models import AlertRuleCreate, AlertRuleUpdate
+from .models import HostAlertRuleCreate, HostAlertRuleUpdate
 from .repository import AlertRuleRepository, AlertIncidentRepository
+from .repository import HostAlertRuleRepository, HostAlertIncidentRepository
 from ..notifications.service import NotificationService
 from ..notifications.repository import NotificationChannelRepository
 import json
@@ -16,11 +18,15 @@ incident_repo = AlertIncidentRepository()
 notification_service = NotificationService()
 channel_repo = NotificationChannelRepository()
 
+# Host-level alert repos
+host_rule_repo = HostAlertRuleRepository()
+host_incident_repo = HostAlertIncidentRepository()
+
 
 async def _trigger_incident_notifications(incident_id: str, rule_data: dict, check_data: dict):
     """
     Trigger notifications for a new incident
-    
+
     Args:
         incident_id: UUID of the incident
         rule_data: Alert rule data dict
@@ -37,7 +43,7 @@ async def _trigger_incident_notifications(incident_id: str, rule_data: dict, che
             "threshold": rule_data.get("threshold"),
             "condition": rule_data.get("condition")
         }
-        
+
         # Send to all enabled channels (non-blocking, fire-and-forget)
         asyncio.create_task(
             notification_service.send_to_all_channels(
@@ -122,16 +128,16 @@ async def list_incidents(request: Request):
 async def acknowledge_incident(request: Request):
     try:
         incident_id = request.path_params.get("incident_id")
-        
+
         # Extract user_id from JWT token
         auth_header = get_header(request, "Authorization", "")
         if not auth_header.startswith("Bearer "):
             return json_response({"error": "Unauthorized"}, 401)
-        
+
         token = auth_header[7:]
         from ..auth.service import auth_service
         user_id = auth_service.verify_token(token)
-        
+
         await incident_repo.acknowledge(incident_id, user_id)
         return json_response({"message": "Acknowledged"}, 200)
     except Exception as e:
@@ -164,5 +170,117 @@ async def add_incident_comment(request: Request):
         comment = body.get("comment", "")
         await incident_repo.add_comment(incident_id, user_id, comment)
         return json_response({"message": "Comment added"}, 201)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+# ─── Host-level Docker Alert Routes ───────────────────────────────────────────
+
+async def create_host_alert_rule(request: Request):
+    """POST /hosts/:host_id/alerts/rules"""
+    try:
+        body = json.loads(request.body)
+        rule_data = HostAlertRuleCreate(**body)
+        result = await host_rule_repo.create(rule_data)
+        return json_response({"id": str(result["id"])}, 201)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def list_host_alert_rules(request: Request):
+    """GET /hosts/:host_id/alerts/rules"""
+    try:
+        host_id = request.path_params.get("host_id")
+        enabled = request.query_params.get("enabled", None)
+        rules = await host_rule_repo.list(
+            host_id=host_id,
+            enabled=None if enabled is None else (enabled.lower() == "true")
+        )
+        return json_response(rules, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def get_host_alert_rule(request: Request):
+    """GET /hosts/:host_id/alerts/rules/:rule_id"""
+    try:
+        rule_id = request.path_params.get("rule_id")
+        rule = await host_rule_repo.get_by_id(rule_id)
+        if not rule:
+            return json_response({"error": "Rule not found"}, 404)
+        return json_response(rule, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def update_host_alert_rule(request: Request):
+    """PATCH /hosts/:host_id/alerts/rules/:rule_id"""
+    try:
+        rule_id = request.path_params.get("rule_id")
+        body = json.loads(request.body)
+        rule_data = HostAlertRuleUpdate(**body)
+        await host_rule_repo.update(rule_id, rule_data)
+        return json_response({"message": "Updated"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def delete_host_alert_rule(request: Request):
+    """DELETE /hosts/:host_id/alerts/rules/:rule_id"""
+    try:
+        rule_id = request.path_params.get("rule_id")
+        await host_rule_repo.delete(rule_id)
+        return json_response({"success": True}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def toggle_host_alert_rule(request: Request):
+    """POST /hosts/:host_id/alerts/rules/:rule_id/toggle"""
+    try:
+        rule_id = request.path_params.get("rule_id")
+        body = json.loads(request.body)
+        await host_rule_repo.toggle(rule_id, body.get("enabled", True))
+        return json_response({"message": "Toggled"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def list_host_alert_incidents(request: Request):
+    """GET /hosts/:host_id/alerts/incidents"""
+    try:
+        host_id = request.path_params.get("host_id")
+        status = request.query_params.get("status", None)
+        limit = int(request.query_params.get("limit", "50"))
+        incidents = await host_incident_repo.list(host_id=host_id, status=status, limit=limit)
+        return json_response(incidents, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def acknowledge_host_incident(request: Request):
+    """POST /hosts/alerts/incidents/:incident_id/acknowledge"""
+    try:
+        incident_id = request.path_params.get("incident_id")
+        auth_header = get_header(request, "Authorization", "")
+        user_id = "unknown"
+        if auth_header.startswith("Bearer "):
+            from ..auth.service import auth_service
+            try:
+                user_id = auth_service.verify_token(auth_header[7:])
+            except Exception:
+                pass
+        await host_incident_repo.acknowledge(incident_id, user_id)
+        return json_response({"message": "Acknowledged"}, 200)
+    except Exception as e:
+        return json_response({"error": str(e)}, 400)
+
+
+async def resolve_host_incident(request: Request):
+    """POST /hosts/alerts/incidents/:incident_id/resolve"""
+    try:
+        incident_id = request.path_params.get("incident_id")
+        await host_incident_repo.resolve(incident_id)
+        return json_response({"message": "Resolved"}, 200)
     except Exception as e:
         return json_response({"error": str(e)}, 400)

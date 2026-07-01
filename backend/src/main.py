@@ -92,7 +92,10 @@ from .domains.monitoring.repository import MonitoringCheckRepository, Monitoring
 from .domains.alerts.routes import (
     create_alert_rule, list_alert_rules, get_alert_rule, update_alert_rule, toggle_alert_rule,
     list_incidents, acknowledge_incident, resolve_incident,
-    get_incident_timeline, add_incident_comment
+    get_incident_timeline, add_incident_comment,
+    create_host_alert_rule, list_host_alert_rules, get_host_alert_rule,
+    update_host_alert_rule, delete_host_alert_rule, toggle_host_alert_rule,
+    list_host_alert_incidents, acknowledge_host_incident, resolve_host_incident,
 )
 from .domains.notifications.routes import (
     create_notification_channel, list_notification_channels, get_notification_channel,
@@ -482,6 +485,43 @@ async def ack_incident(request: Request):
 @app.post("/alerts/incidents/:incident_id/resolve")
 async def resolve_alert_incident(request: Request):
     return await resolve_incident(request)
+
+# ============= HOST-LEVEL ALERT ROUTES =============
+@app.post("/hosts/:host_id/alerts/rules")
+async def create_h_alert_rule(request: Request):
+    return await create_host_alert_rule(request)
+
+@app.get("/hosts/:host_id/alerts/rules")
+async def list_h_alert_rules(request: Request):
+    return await list_host_alert_rules(request)
+
+@app.get("/hosts/:host_id/alerts/rules/:rule_id")
+async def get_h_alert_rule(request: Request):
+    return await get_host_alert_rule(request)
+
+@app.patch("/hosts/:host_id/alerts/rules/:rule_id")
+async def update_h_alert_rule(request: Request):
+    return await update_host_alert_rule(request)
+
+@app.delete("/hosts/:host_id/alerts/rules/:rule_id")
+async def delete_h_alert_rule(request: Request):
+    return await delete_host_alert_rule(request)
+
+@app.post("/hosts/:host_id/alerts/rules/:rule_id/toggle")
+async def toggle_h_alert_rule(request: Request):
+    return await toggle_host_alert_rule(request)
+
+@app.get("/hosts/:host_id/alerts/incidents")
+async def list_h_alert_incidents(request: Request):
+    return await list_host_alert_incidents(request)
+
+@app.post("/hosts/alerts/incidents/:incident_id/acknowledge")
+async def ack_h_incident(request: Request):
+    return await acknowledge_host_incident(request)
+
+@app.post("/hosts/alerts/incidents/:incident_id/resolve")
+async def resolve_h_incident(request: Request):
+    return await resolve_host_incident(request)
 
 # ============= NOTIFICATION CHANNEL ROUTES =============
 @app.post("/notifications/channels")
