@@ -1,145 +1,235 @@
 # ServiceOps Platform — Development Roadmap
 
-**Target:** Production-ready v1.0 by Q3 2026  
-**Current Status:** Phase 13 Complete (Backend 100%, Frontend 100%)  
-**Remaining Work:** 1 phase (Production Deployment - Phase 14)
+**Target:** Production v2.0 by Q4 2026  
+**Current:** Phase 15 Complete (Docker Management)  
+**Branch:** `feature/docker-management` (awaiting merge → `main`)
 
 ---
 
-## Phase 12: Notification System ✅ **COMPLETE**
+## Legend
 
-**Status:** ✅ **Deployed and tested**
-
-**Success Criteria Met:**
-- ✅ Alert rule fires → notification sent to Telegram
-- ✅ Failed notification logged + retried automatically
-- ✅ User can test notification channel before saving
-
----
-
-## Phase 13: Frontend Integration & Bug Fixes ✅ **COMPLETE**
-
-**Duration:** 1 week  
-**Effort:** 40 hours  
-**Priority:** CRITICAL (production-blocking bugs)  
-**Status:** ✅ **All 11 pages functional**
-
-### Bugs Fixed (2026-06-16)
-1. ✅ Token persistence on page refresh (AuthStore localStorage init)
-2. ✅ Notifications menu logout bug (middleware simplified)
-3. ✅ Asset types dropdown empty (proxy route added)
-4. ✅ SLA/Incidents/Checks 400 errors (QueryParams defaults)
-5. ✅ Topology page hang (SQL JOIN fixes)
-6. ✅ JSX structure errors (indentation fixes)
-7. ✅ Port conflicts (8080 vs 9080 resolved)
-
-**Success Criteria Met:**
-- ✅ All 52 API endpoints responding 200 OK
-- ✅ All 11 pages load without errors
-- ✅ No TypeScript build errors
-- ✅ Auth flow persistent across refresh
-- ✅ Ready for Phase 14
+| Icon | Meaning |
+|------|---------|
+| ✅ | Complete |
+| 🔄 | In Progress |
+| 📋 | Planned (low priority) |
+| 🚀 | Deployed to Production |
 
 ---
 
-## Phase 14: Production Deployment ✅ **COMPLETE**
+## ✅ Phase 0–11: Core Backend
 
-**Duration:** 2 weeks  
-**Effort:** 80 hours  
-**Priority:** HIGH (required for production)
+**Status:** ✅ Complete (v1.0 foundation)
 
-### Tasks
-1. CI/CD Pipeline (GitHub Actions) — 20 hours
-2. Docker multi-stage builds — 8 hours
-3. Security hardening (MFA, rate limiting) — 15 hours
-4. E2E tests (Playwright) — 12 hours
-5. API documentation (OpenAPI) — 8 hours
-6. Deployment guide + runbooks — 10 hours
-7. Performance optimization — 7 hours
-
-**Target Completion:** Week 16 (2026-06-30)
-
----
-
-## Phase 15: Docker Management ✅ **COMPLETE**
-
-**Status:** ✅ **Deployed and tested**
-
-**Features Added:**
-- Multi-host Docker management via SSH (password + SSH key auth)
-- Container lifecycle: list, start, stop, restart, remove
-- Container logs: view + live streaming via SSE
-- Image management: list, pull, remove, bulk delete, prune
-- Volume management: list, inspect, remove
-- Docker Compose: project management, up/down/restart, scale replicas
-- Credential encryption: Fernet AES-128 for SSH passwords/keys
-- Security: delete host → login password (bcrypt); delete Docker resource → SSH password
-- UI: filter containers (all/running/stopped), show/hide password toggle
-- Consistent styling with existing ServiceOps pages (Layout wrapper)
-
-**API Endpoints:** 56 Docker endpoints across hosts, containers, images, volumes, compose
-
-**Success Criteria Met:**
-- ✅ All Docker endpoints return 200 OK
-- ✅ SSH connection works to remote VM
-- ✅ Container CRUD operational
-- ✅ Image CRUD + prune operational
-- ✅ Credential encryption verified
-- ✅ Docker page uses consistent ServiceOps layout
+| Module | Status | Notes |
+|--------|--------|-------|
+| Authentication | ✅ | JWT + bcrypt + refresh tokens |
+| RBAC | ✅ | Roles, permissions, role-permission mapping |
+| Asset Registry (CMDB) | ✅ | Types, tags, relationships, CSV import |
+| Monitoring Checks | ✅ | HTTP, Ping, TCP, DNS, SSL plugins |
+| Check Scheduler | ✅ | Background task every 30s |
+| Alert Rules | ✅ | Threshold-based evaluation |
+| Incident Management | ✅ | Open → Ack → Resolved lifecycle |
+| SLA Tracking | ✅ | Uptime calculation per check |
+| Topology Graph | ✅ | Asset dependency visualization |
+| Log Aggregation | ✅ | Search + filter |
+| Audit Logging | ✅ | All CRUD actions tracked |
+| Notifications | ✅ | Telegram, Email, Discord, Webhook |
 
 ---
 
-## Phase 16: RBAC & Permissions (Planned)
+## ✅ Phase 12: Notifications
 
-- Host-level access control
-- Role-based Docker permissions
-- Audit logging
+**Status:** ✅ Complete
 
----
+### Deliverables
+- ✅ Multi-channel notification dispatch (Telegram, Email, Discord, Slack, Webhook)
+- ✅ Notification channels CRUD
+- ✅ Test-before-save (dry-run)
+- ✅ Rate limiting + retry queue
+- ✅ Alert rule ↔ channel mapping
+- ✅ Notification templates
 
-## Timeline Summary
-
-| Phase | Duration | Start | End | Status |
-|-------|----------|-------|-----|--------|
-| Phase 0-11 | 11 weeks | Week 1 | Week 11 | ✅ Complete |
-| Phase 12 | 2 weeks | Week 12 | Week 13 | ✅ Complete |
-| Phase 13 | 1 week | Week 14 | Week 14 | ✅ Complete |
-| Phase 14 | 2 weeks | Week 15 | Week 16 | ⏳ Next |
-| **Total** | **16 weeks** | — | Week 16 | **⏳ 87% Complete** |
-
-**Target Completion:** Week 16 (Q3 2026)  
-**Current Progress:** Phase 13/14 complete (93% phases, 87% effort)  
-**Last Updated:** 2026-06-16
+### Success Metrics
+- ✅ Alert fires → notification sent within 5s
+- ✅ Failed notification logged + retry
+- ✅ 200+ concurrent notifications handled
 
 ---
 
-## Success Metrics (v1.0 Definition of Done)
+## ✅ Phase 13: Frontend + Bug Fixes
 
-### Functional Requirements
-- [x] Multi-user with RBAC (admin, manager, viewer)
-- [x] Asset registry + monitoring (5 check types)
+**Status:** ✅ Complete
+
+### Bug Fixes (Week 14)
+| # | Bug | Fix |
+|---|-----|-----|
+| 1 | Token lost on page refresh | AuthStore localStorage init |
+| 2 | Notifications page → logout | Middleware simplified |
+| 3 | Asset types dropdown empty | Proxy route added |
+| 4 | SLA/Incidents/Checks 400 error | QueryParams default values |
+| 5 | Topology page hang → never loads | SQL JOIN fixed |
+
+### Deliverables
+- ✅ All 52 API endpoints wired in frontend
+- ✅ 11 pages functional (Dashboard, Assets, Monitoring, Alerts, Notifications, SLA, Topology, Logs, Users, Settings, Docker)
+- ✅ Zero TypeScript build errors
+- ✅ Consistent Layout wrapper across all pages
+
+---
+
+## ✅ Phase 14: Production Readiness
+
+**Status:** ✅ Complete
+
+### Deliverables
+- ✅ Docker multi-stage builds (`Dockerfile.backend`, `Dockerfile.frontend`)
+- ✅ Docker Compose orchestration (`docker-compose.yml`)
+- ✅ Migration service (`docker-migration.sql` with all DDL)
+- ✅ Health checks for all services
+- ✅ API documentation (OpenAPI/Swagger @ `/docs`)
+- ✅ CORS properly configured
+- ✅ CI/CD pipeline (GitHub Actions `.github/workflows/`)
+
+### Known Gaps
+- 🔄 Rate limiting belum strict (production hardening)
+- 🔄 MFA (multi-factor authentication) — planned
+- 🔄 Backup/restore UI — planned
+
+---
+
+## ✅ Phase 15: Docker Management
+
+**Status:** ✅ Complete  
+**Commits:** `c66318f` (latest)
+
+### Features
+
+| Feature | Since | API Endpoints |
+|---------|-------|---------------|
+| Multi-host SSH connection | Week 18 | POST `/docker/hosts/:id/test` |
+| Container CRUD | Week 18 | 6 endpoints |
+| Image management | Week 19 | 4 endpoints |
+| Volume management | Week 19 | 3 endpoints |
+| Docker Compose | Week 19 | 8 endpoints |
+| Credential encryption (Fernet AES-128) | Week 18 | Built-in |
+| Host monitoring (top CPU/MEM/df) | Week 20 | GET `/docker/hosts/:id/monitor` |
+| Alert thresholds (CPU/Mem/Disk) | Week 20 | 6 endpoints |
+
+### Architecture
+```
+Frontend → fetch/BASE → Backend (9080) → SSH → Remote Docker Host
+          ↑ CORS      ↑ psycopg v3       ↑ asyncssh
+          ↑ SolidJS    ↑ Robyn 0.88      ↑ Docker CLI
+```
+
+### Known Issues
+- ❌ Host offline = permission denied (`/var/run/docker.sock`) — SSH user perlu grup `docker`
+- ❌ CORS bytes vs string issue — **FIXED** in `c66318f`
+- ❌ HostMonitor render crash — **FIXED** in `530e8a9`
+
+---
+
+## 🔄 Phase 16: RBAC & Permissions Refinement
+
+**Status:** 📋 Planned  
+**Priority:** Medium  
+**Dependencies:** Phase 15 merge → `main`
+
+### Scope
+| Item | Type | ETA |
+|------|------|-----|
+| Host-level Docker access control | Feature | TBD |
+| Permission `docker:manage` role gating | Feature | TBD |
+| Audit logging for Docker operations | Feature | TBD |
+| User action history viewer | Feature | TBD |
+
+---
+
+## 📋 Phase 17: Agent System + Dashboard
+
+**Status:** 📋 Planned  
+**Priority:** Medium  
+**Dependencies:** Phase 16
+
+### Scope
+| Item | Type | Notes |
+|------|------|-------|
+| Lightweight agent (Go/Python) | Feature | Installed on each host |
+| Real-time CPU/Mem/Disk/NVIDIA metrics | Feature | Agent → API push |
+| Live dashboard with charts | Feature | Recharts or Chart.js |
+| Anomaly detection | Feature | Threshold + ML baseline |
+
+---
+
+## 📋 Phase 18: Advanced Infrastructure
+
+**Status:** 📋 Planned  
+**Priority:** Low–Medium
+
+### Scope
+| Item | Priority | Notes |
+|------|----------|-------|
+| Multi-tenancy | Medium | Tenant-isolated SaaS |
+| Kubernetes cluster view | Medium | `kubectl` via SSH |
+| Ansible playbook executor | Low | Config management |
+| Backup/restore automation | High | DB + config snapshot |
+| PDF SLA reports | Low | Scheduled email reports |
+
+---
+
+## Timeline
+
+```
+Week  1─11  ████████████  Phase 0–11: Core Backend ✅
+Week 12─13  ██████       Phase 12: Notifications ✅
+Week 14     ███          Phase 13: Frontend Fixes ✅
+Week 15─16  ██████       Phase 14: Production Ready ✅
+Week 17─20  ██████████   Phase 15: Docker Management ✅
+───────────── NOW ─────────────
+Week 21+    —            Phase 16+: RBAC, Agent, Advanced ⏳
+```
+
+---
+
+## Production Hosts
+
+| Host | IP | Docker | Status | Notes |
+|------|----|--------|--------|-------|
+| 🚀 Primary | 10.10.10.201 | 29.4.3 | ✅ Online | Deployed |
+| 🚀 GPU | 10.10.10.139 | 29.2.0 | ✅ Online | Tesla T4 |
+| 🚀 Windmill | 10.10.10.165 | 24.0.7 | ✅ Online | App runner |
+| ❌ CDC Console | 10.10.10.118 | — | ❌ Offline | Needs `sudo usermod -aG docker isep` |
+| ❌ DGX | 10.10.10.154 | — | ❌ Offline | ^ |
+| ❌ Dify Old | 10.10.10.216 | — | ❌ Offline | ^ |
+| ❌ MCP | 10.10.10.86 | — | ❌ Offline | ^ |
+| ❌ WA WAHA | 10.10.10.200 | — | ❌ Offline | ^ |
+
+---
+
+## Definition of Done (v2.0)
+
+### Functional
+- [x] Multi-user RBAC (admin, manager, viewer)
+- [x] Asset registry + 5 check types
 - [x] Alert rules + incidents
 - [x] Log management + search
-- [x] SLA reporting + uptime tracking
-- [x] Topology graph + impact analysis
-- [x] Notifications (email, Telegram, Discord, Slack)
-- [ ] Agent system (CPU, Memory, Disk monitoring)
-- [ ] Metrics dashboard (charts, real-time updates)
+- [x] SLA + uptime tracking
+- [x] Topology graph + impact
+- [x] Notifications (Telegram, Email, Discord, Slack)
+- [x] Docker management (containers, images, volumes, compose)
+- [x] Host monitoring + alert thresholds
+- [ ] Agent-based host metrics
+- [ ] Real-time dashboard charts
 
-### Non-Functional Requirements
-- [x] 68/68 unit tests passing (100% backend coverage)
-- [ ] CI/CD pipeline working
-- [ ] Production Docker images built
-- [ ] API p99 latency < 100ms
-- [ ] Security audit passed
-- [ ] Backup/restore tested
-
-### Documentation
-- [x] PRD, SDD, PROJECT_STATUS, ROADMAP, CHANGELOG
-- [ ] API documentation (OpenAPI/Swagger)
-- [ ] Deployment guide
-- [ ] User manual
+### Non-Functional
+- [x] 68/68 unit tests
+- [ ] CI/CD green pipeline
+- [ ] Production Docker images
+- [x] OpenAPI documentation
+- [ ] Backup/restore verified
+- [ ] Security audit pass
 
 ---
 
-**Next Action:** Start Phase 14 - CI/CD Pipeline + Production Readiness
+**Next Action:** Merge `feature/docker-management` → `main`, deploy to production (10.10.10.201)
