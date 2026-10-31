@@ -2,7 +2,7 @@
 name = "serviceops"
 version = "1.0.0"
 description = "ServiceOps — production observability & CMDB platform"
-license = { text = "Proprietary — QTI Internal Project." }
+license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = [
     "robyn>=0.84",

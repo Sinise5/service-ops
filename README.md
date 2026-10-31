@@ -130,4 +130,4 @@ Mulai dari [indeks dokumentasi](docs/README.md). Panduan utama:
 
 ## Lisensi
 
-Proprietary — QTI Internal Project.
+ServiceOps dilisensikan di bawah [Apache License 2.0](LICENSE). Lisensi ini berlaku untuk kode dan dokumentasi proyek; dependency pihak ketiga tetap mengikuti lisensinya masing-masing.
