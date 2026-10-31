@@ -48,6 +48,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-serviceops_dev}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-this-secret}
+      NVD_API_KEY: ${NVD_API_KEY:-}
+      VULNERABILITY_FEED_INTERVAL_SECONDS: ${VULNERABILITY_FEED_INTERVAL_SECONDS:-300}
+      KEV_REFRESH_INTERVAL_SECONDS: ${KEV_REFRESH_INTERVAL_SECONDS:-3600}
     depends_on:
       postgres:
         condition: service_healthy

@@ -14,6 +14,7 @@ import {
   Radio,
   Settings,
   Siren,
+  ShieldAlert,
   X,
 } from "lucide-solid"
 import { useAuth } from "../stores/AuthStore"
@@ -40,6 +41,10 @@ const sections = [
       { href: "/docker", label: "Docker", icon: Container },
       { href: "/notifications", label: "Notifications", icon: Radio },
     ],
+  },
+  {
+    label: "SECURITY",
+    links: [{ href: "/vulnerabilities", label: "CVE Feed", icon: ShieldAlert }],
   },
   {
     label: "PREFERENCES",

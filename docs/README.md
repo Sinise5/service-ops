@@ -10,6 +10,7 @@ Gunakan halaman ini sebagai indeks dokumentasi yang dijaga agar selaras dengan r
 | [Ringkasan proyek](PROJECT_OVERVIEW.md) | Komponen dan struktur repository |
 | [Instalasi dan deployment](DEPLOYMENT.md) | Docker, pengembangan native, konfigurasi, operasi, troubleshooting |
 | [Panduan penggunaan](USER_GUIDE.md) | Alur kerja dan halaman aplikasi |
+| [CVE Feed](VULNERABILITY_FEED.md) | Update CVE, sinkronisasi sumber, filter, dan notifikasi |
 | [Arsitektur](ARCHITECTURE.md) | Komponen, domain, dan alur request |
 | [Status proyek](PROJECT_STATUS.md) | Ringkasan kemampuan berdasarkan source aktif |
 | [Monitoring Guide](../MONITORING_GUIDE.md) | Setup monitoring terperinci |

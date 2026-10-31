@@ -1,0 +1,1 @@
+"""CVE feed domain."""

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added a CVE Feed page backed by scheduled incremental NVD sync, CISA KEV enrichment, severity/search filters, and notifications for new High/Critical or KEV records.
+
 ### Changed
 - Replaced the primary navigation with a grouped responsive sidebar and refreshed the dashboard summary.
 - Replaced outdated GitLab quick-start instructions with the current GitHub repository and verified local setup steps.

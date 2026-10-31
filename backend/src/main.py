@@ -61,6 +61,18 @@ async def options_handler(request: Request):
 async def health(request: Request):
     return {"status": "ok", "version": "0.1.0"}
 
+@app.get("/vulnerabilities/feed")
+async def get_vulnerability_feed(request: Request):
+    return await list_vulnerabilities(request)
+
+@app.get("/vulnerabilities/status")
+async def get_vulnerability_feed_status(request: Request):
+    return await vulnerability_feed_status(request)
+
+@app.post("/vulnerabilities/sync")
+async def sync_vulnerability_feed_now(request: Request):
+    return await sync_vulnerability_feed(request)
+
 @app.get("/api/guides/:filename")
 async def get_guide(request: Request):
     filename = request.path_params.get("filename")
@@ -162,6 +174,10 @@ from .domains.audit.routes import (
 )
 from .domains.monitoring.models import MonitoringCheckCreate, MonitoringCheckUpdate
 from .domains.monitoring.scheduler import scheduler
+from .domains.vulnerabilities.scheduler import vulnerability_feed_scheduler
+from .domains.vulnerabilities.routes import (
+    list_vulnerabilities, vulnerability_feed_status, sync_vulnerability_feed,
+)
 
 # Initialize repos
 asset_repo = AssetRepository()
@@ -923,12 +939,18 @@ async def docker_git_ls_dir(request: Request):
     return await git_ls_dir(request)
 
 if __name__ == "__main__":
-    import asyncio
-    
     async def startup():
         await db.connect()
         await redis_client.connect()
         await scheduler.start()
-    
-    asyncio.run(startup())
+        await vulnerability_feed_scheduler.start()
+
+    async def shutdown():
+        await vulnerability_feed_scheduler.stop()
+        await scheduler.stop()
+        await db.close()
+        await redis_client.close()
+
+    app.startup_handler(startup)
+    app.shutdown_handler(shutdown)
     app.start(port=settings.port, host=settings.host)

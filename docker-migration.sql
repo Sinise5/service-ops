@@ -105,6 +105,53 @@ CREATE TABLE IF NOT EXISTS host_alert_rules (
 CREATE INDEX IF NOT EXISTS idx_host_alert_rules_host ON host_alert_rules(host_id);
 CREATE INDEX IF NOT EXISTS idx_host_alert_rules_enabled ON host_alert_rules(enabled);
 
+-- CVE feed and synchronization state
+CREATE TABLE IF NOT EXISTS vulnerability_feed (
+    cve_id TEXT PRIMARY KEY,
+    description TEXT NOT NULL DEFAULT '',
+    published_at TIMESTAMPTZ,
+    last_modified_at TIMESTAMPTZ,
+    severity VARCHAR(16) NOT NULL DEFAULT 'unknown',
+    cvss_score NUMERIC(4, 1),
+    cvss_version VARCHAR(16),
+    source_identifier TEXT,
+    vuln_status VARCHAR(32),
+    cwe_ids TEXT[] NOT NULL DEFAULT '{}',
+    reference_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
+    known_exploited BOOLEAN NOT NULL DEFAULT FALSE,
+    kev_date_added DATE,
+    kev_due_date DATE,
+    raw_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_vulnerability_feed_published
+    ON vulnerability_feed(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vulnerability_feed_severity
+    ON vulnerability_feed(severity, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vulnerability_feed_kev
+    ON vulnerability_feed(known_exploited, published_at DESC);
+
+CREATE TABLE IF NOT EXISTS vulnerability_feed_state (
+    id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    last_synced_at TIMESTAMPTZ,
+    last_success_at TIMESTAMPTZ,
+    last_attempt_at TIMESTAMPTZ,
+    last_kev_sync_at TIMESTAMPTZ,
+    last_error TEXT,
+    kev_last_error TEXT,
+    last_record_count INTEGER NOT NULL DEFAULT 0,
+    initialized BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+INSERT INTO vulnerability_feed_state (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE vulnerability_feed_state
+    ADD COLUMN IF NOT EXISTS kev_last_error TEXT;
+
 -- link alert rules to notification channels
 CREATE TABLE IF NOT EXISTS host_alert_rule_channels (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

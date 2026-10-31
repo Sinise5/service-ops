@@ -102,6 +102,11 @@ export default function HelpPage() {
           link: "DOCKER_MANAGEMENT_GUIDE.md"
         },
         {
+          heading: "CVE Feed",
+          text: "Latest CVE records from NVD, CISA KEV flags, sync frequency, notifications, and feed limitations.",
+          link: "VULNERABILITY_FEED.md"
+        },
+        {
           heading: "Alert Rules",
           text: "Single and multi-condition alert rules with AND/OR logic. Operators: >, <, ==, !=, >=, <=. Fields: response_time_ms, status, output.",
           link: "ALERT_RULES_GUIDE.md"

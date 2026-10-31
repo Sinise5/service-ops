@@ -13,6 +13,7 @@ Frontend menggunakan SolidJS dan Vite. Backend menggunakan Python, Robyn, Postgr
 | Assets | CRUD aset dan tipe aset untuk inventaris CMDB |
 | Monitoring | HTTP dan Ping check terjadwal dari UI; backend juga memiliki plugin SSL, tetapi form UI SSL belum lengkap |
 | Alerts & Incidents | Aturan alert, siklus incident, komentar, dan notifikasi |
+| CVE Feed | CVE terbaru dari NVD, penanda CISA KEV, pencarian, filter, dan notifikasi prioritas |
 | Notifications | Kanal Telegram, Discord, Email, dan Webhook |
 | SLA | Target uptime, ringkasan, dan laporan |
 | Topology | Relasi dependensi antar aset dan analisis dampak |
@@ -115,6 +116,7 @@ Mulai dari [indeks dokumentasi](docs/README.md). Panduan utama:
 
 - [Instalasi, konfigurasi, Docker, dan troubleshooting](docs/DEPLOYMENT.md)
 - [Panduan penggunaan](docs/USER_GUIDE.md)
+- [CVE Feed](docs/VULNERABILITY_FEED.md)
 - [Arsitektur](docs/ARCHITECTURE.md)
 - [Status proyek](docs/PROJECT_STATUS.md)
 - [Monitoring](MONITORING_GUIDE.md)

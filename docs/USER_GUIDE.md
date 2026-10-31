@@ -34,6 +34,7 @@ Kredensial tersebut hanya untuk development. Jangan mengekspos instance dengan a
 | Topology | Mengelola relasi aset serta melihat dependency graph/impact analysis |
 | Logs | Mencari entri log yang telah masuk ke ServiceOps |
 | Docker | Menghubungkan host Docker jarak jauh melalui SSH dan mengelola resource host |
+| CVE Feed | Melihat CVE terbaru dari NVD, mencari dan memfilter severity, serta menandai CVE dalam katalog CISA KEV |
 | Settings | Memperbarui profil dan menampilkan alat pembuat API key |
 | Help | Membaca ringkasan fitur dan panduan terpilih |
 
@@ -54,6 +55,12 @@ Alert threshold untuk pemakaian CPU, memori, dan disk host berlaku pada fitur ho
 ## Kanal notifikasi
 
 ServiceOps menyediakan adapter untuk Telegram, Discord, Email, dan Webhook. Siapkan token/URL atau konfigurasi SMTP pada halaman Notifications. Kredensial provider tidak disediakan oleh ServiceOps; jaga nilainya tetap privat dan uji kanal sebelum mengandalkannya untuk incident penting.
+
+## CVE Feed
+
+Halaman CVE Feed menampilkan record terbaru dari NVD, termasuk severity/CVSS bila tersedia, referensi CWE, dan penanda CISA KEV. Gunakan pencarian, severity, rentang waktu, atau filter KEV untuk mempersempit daftar. Sinkronisasi berjalan otomatis; tombol **Sinkronkan sekarang** meminta pembaruan segera.
+
+Untuk detail implementasi, batasan feed, dan notifikasi, lihat [Panduan CVE Feed](VULNERABILITY_FEED.md).
 
 ## Docker jarak jauh
 

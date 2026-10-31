@@ -45,9 +45,14 @@ Salin `.env.example` menjadi `.env`. Nilai berikut dipakai Compose:
 | `BACKEND_PORT` | `9080` | Port API yang dipublikasikan ke host |
 | `FRONTEND_PORT` | `5173` | Port UI yang dipublikasikan ke host |
 | `JWT_SECRET` | placeholder | Ganti dengan secret acak sebelum penggunaan bersama |
+| `VULNERABILITY_FEED_INTERVAL_SECONDS` | `300` | Jeda sinkron CVE NVD dalam detik; minimum efektif 60 detik |
+| `KEV_REFRESH_INTERVAL_SECONDS` | `3600` | Jeda pembaruan katalog CISA KEV dalam detik; minimum efektif 60 detik |
+| `NVD_API_KEY` | kosong | Opsional; API key NVD untuk kuota API yang lebih longgar |
 
 Contoh membuat secret: `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`.
 Jika mengganti port PostgreSQL/Redis untuk development native, samakan port tersebut dengan URL pada `backend/.env`.
+
+CVE Feed membutuhkan akses internet keluar dari backend ke NVD dan CISA. `NVD_API_KEY` opsional; salin nilainya ke `backend/.env` saat menjalankan backend native, atau ke `.env` root saat memakai Compose.
 
 ## Pengembangan dengan backend/frontend native
 

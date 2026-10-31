@@ -21,5 +21,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    # Vulnerability feed
+    nvd_api_key: str = ""
+    vulnerability_feed_interval_seconds: int = 300
+    kev_refresh_interval_seconds: int = 3600
+
 
 settings = Settings()
