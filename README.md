@@ -4,9 +4,6 @@ ServiceOps adalah aplikasi operasi infrastruktur untuk mengelola inventaris aset
 
 Frontend menggunakan SolidJS dan Vite. Backend menggunakan Python, Robyn, PostgreSQL, dan Redis.
 
-## Lisensi
-
-ServiceOps dilisensikan di bawah [Apache License 2.0](LICENSE). Lisensi ini berlaku untuk kode dan dokumentasi proyek; dependency pihak ketiga tetap mengikuti lisensinya masing-masing.
 
 ## Fitur
 
