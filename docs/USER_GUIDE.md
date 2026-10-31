@@ -58,7 +58,9 @@ ServiceOps menyediakan adapter untuk Telegram, Discord, Email, dan Webhook. Siap
 
 ## CVE Feed
 
-Halaman CVE Feed menampilkan record terbaru dari NVD, termasuk severity/CVSS bila tersedia, referensi CWE, dan penanda CISA KEV. Gunakan pencarian, severity, rentang waktu, atau filter KEV untuk mempersempit daftar. Sinkronisasi berjalan otomatis; tombol **Sinkronkan sekarang** meminta pembaruan segera.
+Halaman CVE Feed menampilkan record terbaru dari NVD, termasuk severity/CVSS bila tersedia, referensi CWE, dan penanda CISA KEV. Gunakan pencarian, severity, rentang waktu, atau filter KEV untuk mempersempit daftar. Sinkronisasi berjalan otomatis; tombol **Sinkronkan sekarang** meminta pembaruan segera. Data pada halaman diperiksa ulang setiap 60 detik.
+
+Jadwal pengambilan sumber dapat diatur melalui `VULNERABILITY_FEED_INTERVAL_SECONDS` untuk NVD dan `KEV_REFRESH_INTERVAL_SECONDS` untuk katalog CISA KEV. Perubahan Compose memerlukan container backend dibuat ulang. Contoh nilai dan langkahnya ada di [Panduan CVE Feed](VULNERABILITY_FEED.md#konfigurasi).
 
 Untuk detail implementasi, batasan feed, dan notifikasi, lihat [Panduan CVE Feed](VULNERABILITY_FEED.md).
 

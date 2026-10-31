@@ -54,6 +54,8 @@ Jika mengganti port PostgreSQL/Redis untuk development native, samakan port ters
 
 CVE Feed membutuhkan akses internet keluar dari backend ke NVD dan CISA. `NVD_API_KEY` opsional; salin nilainya ke `backend/.env` saat menjalankan backend native, atau ke `.env` root saat memakai Compose.
 
+Untuk mengatur jadwal feed, ubah `VULNERABILITY_FEED_INTERVAL_SECONDS` (NVD, default 300 detik) atau `KEV_REFRESH_INTERVAL_SECONDS` (CISA KEV, default 3600 detik) di file env yang digunakan. Setelah mengubah env Compose, jalankan `docker-compose up -d --force-recreate backend` agar container membaca nilai baru. Contoh dan langkah lengkap tersedia di [Panduan CVE Feed](VULNERABILITY_FEED.md#konfigurasi).
+
 ## Pengembangan dengan backend/frontend native
 
 Jalankan dependency terlebih dahulu:
