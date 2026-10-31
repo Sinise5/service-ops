@@ -130,6 +130,22 @@ Mulai dari [indeks dokumentasi](docs/README.md). Panduan utama:
 - `.env` dan file lokal lain diabaikan Git. Jangan commit secret, key SSH, atau kredensial layanan.
 - Compose saat ini ditujukan untuk pengembangan lokal. Tambahkan secret manager, TLS/reverse proxy, backup, dan hardening sebelum penggunaan production.
 
+### Interval pembaruan CVE
+
+Secara default, backend memeriksa NVD setiap 5 menit (`VULNERABILITY_FEED_INTERVAL_SECONDS=300`) dan katalog CISA KEV setiap 1 jam (`KEV_REFRESH_INTERVAL_SECONDS=3600`). Halaman CVE Feed mengambil ulang data dari backend setiap 60 detik. Atur dua variabel pertama di `.env` root, misalnya untuk sinkronisasi NVD tiap 10 menit:
+
+```env
+VULNERABILITY_FEED_INTERVAL_SECONDS=600
+```
+
+Setelah mengubah `.env`, terapkan nilai baru dengan membuat ulang container backend:
+
+```bash
+docker-compose up -d --force-recreate backend
+```
+
+Nilai interval minimum efektif adalah 60 detik. Sinkronisasi tetap bergantung pada waktu publikasi dan pengindeksan sumber CVE. Lihat [panduan CVE Feed](docs/VULNERABILITY_FEED.md#konfigurasi) untuk pengaturan CISA, API key NVD, dan detail lainnya.
+
 ## Lisensi
 
 ServiceOps dilisensikan di bawah [Apache License 2.0](LICENSE). Lisensi ini berlaku untuk kode dan dokumentasi proyek; dependency pihak ketiga tetap mengikuti lisensinya masing-masing.
