@@ -61,7 +61,7 @@ async def options_handler(request: Request):
 async def health(request: Request):
     return {"status": "ok", "version": "0.1.0"}
 
-@app.get("/api/guides/{filename}")
+@app.get("/api/guides/:filename")
 async def get_guide(request: Request):
     filename = request.path_params.get("filename")
     if not filename or not filename.endswith(".md"):

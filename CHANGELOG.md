@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replaced the primary navigation with a grouped responsive sidebar and refreshed the dashboard summary.
+- Replaced outdated GitLab quick-start instructions with the current GitHub repository and verified local setup steps.
+- Consolidated current installation, usage, architecture, and project status documentation; marked duplicate overviews as historical.
+
+### Fixed
+- Docker Compose now supports configurable host ports and stops startup when the database migration fails.
+- Frontend container builds use the npm lockfile, a checked-in Nginx config, and the correct API proxy for Help guides.
+- Make targets detect either `docker compose` or the standalone `docker-compose` executable.
+- Git and Docker ignore rules exclude local secrets, dependencies, caches, and database files without ignoring `.dockerignore` files.
+
 ## [0.13.0] - 2026-06-16
 
 ### Added

@@ -1,64 +1,52 @@
+# Secrets and local configuration. Keep templates named .env.example tracked.
+.env
+.env.*
+!.env.example
+!**/.env.example
+
 # Python
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
-build/
 .venv/
 venv/
 env/
-*.pyc
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
 .coverage
 htmlcov/
 
-# Environment
-.env
-*.env.local
-.env.*.local
+# Node and build output
+node_modules/
+frontend/dist/
+frontend/build/
+build/
 
-# IDE
+# Local databases, logs, and temporary files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+*.tmp
+*.temp
+docker-data/
+docker-compose.override.yml
+
+# Editors and operating systems
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
 *.sublime-*
-
-# OS
+*~
 .DS_Store
 Thumbs.db
 .AppleDouble
 .LSOverride
 
-# Project
-node_modules/
-frontend/dist/
-frontend/build/
-backend/.mypy_cache/
-backend/.ruff_cache/
-backend/alembic/__pycache__/
-*.db
-*.sqlite
-*.sqlite3
-
-# Docker
-docker-data/
-.dockerignore
-
-# Logs
-*.log
-/logs/
-
-# OS Temp
-*.tmp
-*.temp
-
-# Backup
+# Backups
 *.bak
 *.backup
-*~
-
-# IDE workspace
-.vscode/settings.json
-.idea/workspace.xml

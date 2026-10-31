@@ -1,200 +1,144 @@
-# ServiceOps Platform — Deployment Guide
+# Instalasi dan deployment
 
-**Version:** 1.1.0  
-**Updated:** July 2026
+Panduan ini ditujukan untuk development lokal. Compose memakai password dan secret contoh, memublikasikan port database ke host, dan belum menyediakan TLS atau secret manager. Lakukan hardening sebelum membuka layanan ke jaringan lain.
 
----
+## Jalankan seluruh aplikasi dengan Docker
 
-## 1. Architecture (Docker Deploy)
-
-```
-┌──────────────┐     ┌──────────────────┐    ┌─────────────┐
-│  Nginx/Rev Proxy  │ → │ ServiceOps       │ → │ PostgreSQL  │
-│  (optional)       │    │ Backend (Python)  │    │             │
-│  port 80/443      │    │ port 9080          │    │ port 5432   │
-└──────────────────┘    └────────┬─────────┘    └─────────────┘
-                                  │                  ↑
-                                  │ SSH              │
-                                  ▼                  │
-                           ┌──────────────┐    ┌─────────────┐
-                           │ Remote VM    │    │   Redis     │
-                           │ Docker Host  │    │   port 6379 │
-                           └──────────────┘    └─────────────┘
-```
-
-## 2. Production Deploy (10.10.10.201)
-
-### Step 1 — Clone & checkout
+Prasyarat: Docker Engine aktif serta Compose tersedia sebagai `docker compose` atau `docker-compose`.
 
 ```bash
-ssh isep@10.10.10.201
-git clone https://gitlab.com/QTI/QTI-Research/service-ops.git
-cd serviceops
-git checkout feature/docker-management   # until merged to main
+git clone https://github.com/Sinise5/service-ops.git
+cd service-ops
+cp .env.example .env
+docker-compose config --quiet
+docker-compose up -d --build
+docker-compose ps
 ```
 
-### Step 2 — Setup env
+Jika instalasi Anda memakai plugin resmi Docker, ganti `docker-compose` dengan `docker compose`.
+
+Compose menjalankan layanan berikut:
+
+| Service | Fungsi | Port host default |
+| --- | --- | --- |
+| `postgres` | Database PostgreSQL; memuat `init.sql` dan `seed.sql` pada volume baru | 15433 |
+| `redis` | Cache dan layanan backend | 16379 |
+| `migrate` | Menerapkan `docker-migration.sql`, lalu berhenti | — |
+| `backend` | API Robyn pada port container 9080 | 9080 |
+| `frontend` | UI statis lewat Nginx; `/api` diproxy ke backend | 5173 |
+
+Buka http://localhost:5173. Health check API: `curl http://localhost:9080/health`.
+
+Login seed lokal: `admin@serviceops.local` / `admin123`. Akun tersebut hanya untuk lingkungan development yang dibuat dari seed database.
+
+## Variabel lingkungan
+
+Salin `.env.example` menjadi `.env`. Nilai berikut dipakai Compose:
+
+| Variabel | Default lokal | Keterangan |
+| --- | --- | --- |
+| `POSTGRES_USER` | `postgres` | Pengguna database |
+| `POSTGRES_PASSWORD` | `postgres` | Password database development |
+| `POSTGRES_DB` | `serviceops_dev` | Nama database |
+| `POSTGRES_HOST_PORT` | `15433` | Port PostgreSQL yang dipublikasikan ke host |
+| `REDIS_HOST_PORT` | `16379` | Port Redis yang dipublikasikan ke host |
+| `BACKEND_PORT` | `9080` | Port API yang dipublikasikan ke host |
+| `FRONTEND_PORT` | `5173` | Port UI yang dipublikasikan ke host |
+| `JWT_SECRET` | placeholder | Ganti dengan secret acak sebelum penggunaan bersama |
+
+Contoh membuat secret: `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`.
+Jika mengganti port PostgreSQL/Redis untuk development native, samakan port tersebut dengan URL pada `backend/.env`.
+
+## Pengembangan dengan backend/frontend native
+
+Jalankan dependency terlebih dahulu:
 
 ```bash
-# Backend config
-cat > backend/.env << 'EOF'
-PORT=9080
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/serviceops_dev
-REDIS_URL=redis://localhost:6379/0
-JWT_SECRET=<generate-random-64-chars>
-CORS_ORIGINS='["http://localhost:5173","https://serviceops.yourdomain.com"]'
-LOG_LEVEL=info
-EOF
-
-# Generate JWT secret
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+cp .env.example .env
+docker-compose up -d --build postgres redis
+docker-compose run --build --rm migrate
 ```
 
-### Step 3 — Start with Docker Compose
+Terminal backend:
 
 ```bash
-# Start all services
-docker compose up -d --build
+cp backend/.env.example backend/.env
+cd backend
+uv sync
+uv run python run_server.py
+```
 
-# Check logs
-docker compose logs -f backend
-docker compose logs -f migrate  # verify migration ran
+Terminal frontend:
 
-# Check health
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Frontend memakai Vite proxy pada `/api`. Proxy mempertahankan prefix untuk endpoint panduan (`/api/guides/...`) dan menghapus prefix untuk route API lain yang didaftarkan backend di root.
+
+## Operasi harian
+
+```bash
+docker-compose ps
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs migrate
+docker-compose restart backend
+docker-compose down
+```
+
+`down` menghentikan dan menghapus container/network proyek tetapi mempertahankan volume. `docker-compose down -v` menghapus volume PostgreSQL dan Redis beserta datanya; gunakan hanya bila ingin reset database development.
+
+Perubahan `init.sql` hanya otomatis diterapkan saat volume PostgreSQL baru dibuat. Perubahan skema untuk database yang sudah ada harus diberikan melalui migration SQL yang sesuai lalu dijalankan dengan prosedur migration proyek.
+
+## Build image terpisah
+
+```bash
+docker-compose build backend frontend
+```
+
+Build context menggunakan `.dockerignore` pada root agar tidak mengirim `.env`, `.git`, dependency lokal, cache, atau database lokal ke Docker daemon. Dokumentasi panduan yang dibaca Help UI disalin ke image backend secara eksplisit.
+
+## Troubleshooting
+
+### Compose command tidak ditemukan
+
+Gunakan `docker-compose` jika instalasi tidak memasang plugin `docker compose`. Periksa dengan `docker-compose version`.
+
+### Port host sudah dipakai
+
+Ubah `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `BACKEND_PORT`, atau `FRONTEND_PORT` dalam `.env`, lalu jalankan ulang Compose. Port antar-container tetap menggunakan port internal yang ditentukan Compose.
+
+### Backend berhenti saat startup
+
+Periksa dependency dan log:
+
+```bash
+docker-compose ps -a
+docker-compose logs postgres redis migrate backend
+```
+
+Backend menunggu PostgreSQL, Redis, dan migration selesai. Migration berhenti pada error SQL supaya backend tidak berjalan dengan skema parsial.
+
+### Halaman terbuka tetapi API gagal
+
+```bash
 curl http://localhost:9080/health
+docker-compose logs -f frontend backend
 ```
 
-### Step 4 — Verify
+UI container mengirim `/api` melalui Nginx pada jaringan Compose. Jangan mengatur `VITE_API_URL` ke nama host container pada browser pengguna; hostname `backend` hanya tersedia di jaringan Docker.
 
-```bash
-# API health
-curl http://localhost:9080/health
-# → {"status":"ok"}
+### Panduan Help tidak terbuka
 
-# Frontend
-curl http://localhost:5173
-# → HTML page loads
-```
+Endpoint `/api/guides/<nama-file>.md` menyajikan beberapa berkas panduan Markdown. Pastikan frontend memakai proxy yang disertakan dan image backend dibangun ulang sesudah mengubah Dockerfile atau panduan.
 
----
+## Keamanan sebelum deployment
 
-## 3. Migration System
-
-### Docker Compose Migration Flow
-
-```
-Compose starts → migrate container → psql -f docker-migration.sql → exit 0 → backend starts
-                                                                    ↓ exit 1
-                                                                    compose stops
-```
-
-**File: `docker-migration.sql`**
-- Contains ALL DDL (`CREATE TABLE IF NOT EXISTS`)
-- Safe for fresh install AND incremental updates
-- Includes: `docker_hosts`, `docker_compose_projects`, `host_alert_rules`, etc.
-
-### Manual Migration
-
-```bash
-# Fresh DB
-psql -d serviceops_dev -f init.sql
-
-# Incremental
-psql -d serviceops_dev -f docker-migration.sql
-
-# Or run individual migrations
-psql -d serviceops_dev -f backend/migrations/0013_docker_alerts.sql
-psql -d serviceops_dev -f backend/migrations/0014_host_alert_rules.sql
-```
-
----
-
-## 4. Environment Variables
-
-| Variable | Default | Required | Notes |
-|----------|---------|----------|-------|
-| `PORT` | `9080` | ✅ | Backend listen port |
-| `DATABASE_URL` | — | ✅ | PostgreSQL connection string |
-| `REDIS_URL` | — | ✅ | Redis connection string |
-| `JWT_SECRET` | — | ✅ | Generate with `secrets.token_urlsafe(64)` |
-| `CORS_ORIGINS` | `["http://localhost:5173"]` | 🔲 | JSON array of allowed origins |
-| `LOG_LEVEL` | `info` | 🔲 | debug/info/warning/error |
-| `DOCKER_ENC_KEY` | auto-generated | 🔲 | Fernet key path (default: `.docker_enc_key`) |
-
----
-
-## 5. Post-Deploy Checklist
-
-- [ ] Backend health check → `curl /health`
-- [ ] Frontend loads → browser open
-- [ ] Login → `admin@serviceops.local / admin123`
-- [ ] Docker hosts visible → sidebar → Docker
-- [ ] Test connection → each host
-- [ ] Alert rules → add threshold rule
-- [ ] CORS → frontend can call API without errors
-- [ ] Notifications → test channel → send test message
-
----
-
-## 6. Troubleshooting
-
-### Backend won't start
-
-```bash
-docker compose logs backend
-# Check DB_URL, Redis connection, port conflicts
-```
-
-### Migration failed
-
-```bash
-docker compose logs migrate
-#  psql error → fix SQL → re-run manually:
-docker compose run --rm migrate sh -c "psql \$DATABASE_URL -f /docker-migration.sql"
-```
-
-### Host offline (permission denied)
-
-```bash
-# SSH ke host, add user to docker group
-ssh isep@10.10.10.X
-sudo usermod -aG docker isep
-exit
-# Re-login SSH session or:
-sudo systemctl restart docker
-```
-
-### CORS errors in browser
-
-```bash
-# Check backend response headers:
-curl -sv -H "Origin: http://localhost:5173" http://localhost:9080/health 2>&1 | grep -i access-control
-# Should have: access-control-allow-origin: *
-```
-
----
-
-## 7. Docker Image Build
-
-### Backend
-
-```dockerfile
-FROM python:3.12-slim
-WORKDIR /app
-COPY backend/ .
-RUN pip install uv && uv sync --frozen --no-dev
-CMD ["uv", "run", "python", "-m", "src.main"]
-```
-
-### Frontend
-
-```dockerfile
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY frontend/ .
-RUN npm install && npm run build
-
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-```
+- Ganti password database, `JWT_SECRET`, dan kredensial seed.
+- Jangan publikasikan PostgreSQL/Redis ke jaringan publik; batasi port host atau hapus port mapping.
+- Tambahkan TLS/reverse proxy, backup database, logging/retensi, dan secret manager sesuai lingkungan.
+- Batasi akses SSH host Docker dan gunakan key/kredensial dengan hak minimum.
+- Verifikasi status, backup, dan restore di lingkungan target sebelum menerima beban produksi.

@@ -1,9 +1,58 @@
-import { A } from "@solidjs/router"
+import { A, useLocation } from "@solidjs/router"
+import { createSignal, For, Show, type ParentProps } from "solid-js"
+import {
+  Activity,
+  Bell,
+  Boxes,
+  CircleHelp,
+  Container,
+  FileText,
+  Gauge,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Radio,
+  Settings,
+  Siren,
+  X,
+} from "lucide-solid"
 import { useAuth } from "../stores/AuthStore"
-import { createSignal, type ParentProps } from "solid-js"
+
+const sections = [
+  {
+    label: "OVERVIEW",
+    links: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "OBSERVABILITY",
+    links: [
+      { href: "/monitoring", label: "Monitoring", icon: Activity },
+      { href: "/alerts", label: "Alert rules", icon: Bell },
+      { href: "/incidents", label: "Incidents", icon: Siren },
+      { href: "/logs", label: "Logs", icon: FileText },
+      { href: "/sla", label: "SLA reports", icon: Gauge },
+    ],
+  },
+  {
+    label: "INVENTORY & TOOLS",
+    links: [
+      { href: "/assets", label: "Assets", icon: Boxes },
+      { href: "/docker", label: "Docker", icon: Container },
+      { href: "/notifications", label: "Notifications", icon: Radio },
+    ],
+  },
+  {
+    label: "PREFERENCES",
+    links: [
+      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/help", label: "Help center", icon: CircleHelp },
+    ],
+  },
+]
 
 export default function Layout(props: ParentProps) {
   const auth = useAuth()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = createSignal(false)
 
   const handleLogout = () => {
@@ -12,103 +61,104 @@ export default function Layout(props: ParentProps) {
   }
 
   const closeMenu = () => setMenuOpen(false)
+  const email = () => auth?.user?.email || "User"
+  const initials = () => email().slice(0, 1).toUpperCase()
 
-  const links = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/assets", label: "Assets" },
-    { href: "/monitoring", label: "Monitoring" },
-    { href: "/alerts", label: "Alerts" },
-    { href: "/incidents", label: "Incidents" },
-    { href: "/notifications", label: "Notifications" },
-    { href: "/sla", label: "SLA" },
-    // { href: "/topology", label: "Topology" }, // hidden — still error
-    { href: "/logs", label: "Logs" },
-    { href: "/docker", label: "🐳 Docker" },
-    { href: "/help", label: "📚 Help" },
-    { href: "/settings", label: "Settings" },
-  ]
+  const sidebar = (mobile = false) => (
+    <>
+      <div class="flex h-[72px] items-center justify-between border-b border-slate-800/80 px-5">
+        <A href="/dashboard" onClick={mobile ? closeMenu : undefined} class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white shadow-sm shadow-blue-950/50">
+            <Activity size={19} strokeWidth={2.4} />
+          </span>
+          <span>
+            <span class="block text-[15px] font-semibold tracking-tight text-white">ServiceOps</span>
+            <span class="block text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500">Operations</span>
+          </span>
+        </A>
+        <Show when={mobile}>
+          <button onClick={closeMenu} aria-label="Close navigation" class="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400">
+            <X size={18} />
+          </button>
+        </Show>
+      </div>
 
-  return (
-    <div class="min-h-screen bg-slate-950">
-      {/* Nav */}
-      <nav class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/70 backdrop-blur-md">
-        <div class="px-4 py-2.5 flex items-center justify-between">
-
-          {/* Logo + hamburger row */}
-          <div class="flex items-center gap-4">
-            <button
-              onClick={() => setMenuOpen(!menuOpen())}
-              class="lg:hidden p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-              aria-label="Toggle menu"
-            >
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                {menuOpen()
-                  ? <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  : <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                }
-              </svg>
-            </button>
-            <A href="/dashboard" class="text-lg font-bold text-blue-400 flex items-center gap-2 shrink-0">
-              <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-              </svg>
-              ServiceOps
-            </A>
-          </div>
-
-          {/* Desktop nav links */}
-          <div class="hidden lg:flex items-center gap-1 overflow-x-auto scrollbar-none">
-            {links.map(l => (
-              <A href={l.href} class="px-2.5 py-1.5 text-sm text-slate-300 hover:text-blue-400 hover:bg-slate-800/50 rounded transition-colors whitespace-nowrap">
-                {l.label}
-              </A>
-            ))}
-          </div>
-
-          {/* User info */}
-          <div class="flex items-center gap-3 shrink-0">
-            <span class="hidden sm:inline text-sm text-slate-400 truncate max-w-[120px]">
-              {auth?.user?.email || "User"}
-            </span>
-            <button
-              onClick={handleLogout}
-              class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
+      <nav aria-label="Main navigation" class="flex-1 space-y-7 overflow-y-auto px-3 py-6">
+        <For each={sections}>{section => (
+          <section>
+            <h2 class="mb-2 px-3 text-[10px] font-semibold tracking-[0.14em] text-slate-500">{section.label}</h2>
+            <div class="space-y-1">
+              <For each={section.links}>{link => {
+                const Icon = link.icon
+                return (
+                  <A
+                    href={link.href}
+                    onClick={mobile ? closeMenu : undefined}
+                    activeClass="!bg-blue-500/10 !text-blue-300 before:absolute before:inset-y-2 before:left-0 before:w-[2px] before:rounded-full before:bg-blue-400"
+                    inactiveClass="text-slate-400 hover:bg-slate-800/70 hover:text-slate-100"
+                    class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                  >
+                    <Icon size={17} strokeWidth={1.8} />
+                    {link.label}
+                  </A>
+                )
+              }}</For>
+            </div>
+          </section>
+        )}</For>
       </nav>
 
-      {/* Mobile sidebar overlay */}
-      {menuOpen() && (
-        <div class="fixed inset-0 z-30 lg:hidden" onClick={closeMenu}>
-          <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <aside
-            class="relative w-64 max-w-[75vw] h-full bg-slate-900 border-r border-slate-800 overflow-y-auto p-4 animate-slide-in"
-            onClick={e => e.stopPropagation()}
-          >
-            <div class="flex flex-col gap-1">
-              {links.map(l => (
-                <A
-                  href={l.href}
-                  onClick={closeMenu}
-                  class="px-3 py-2 text-sm text-slate-300 hover:text-blue-400 hover:bg-slate-800/50 rounded transition-colors"
-                >
-                  {l.label}
-                </A>
-              ))}
-            </div>
-            <div class="mt-6 pt-4 border-t border-slate-800">
-              <span class="text-sm text-slate-500 block mb-2">{auth?.user?.email || "User"}</span>
-              <button onClick={handleLogout} class="text-sm text-red-400 hover:text-red-300">Logout</button>
-            </div>
+      <div class="border-t border-slate-800/80 p-3">
+        <div class="flex items-center gap-3 rounded-lg p-2">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-sm font-semibold text-slate-200">{initials()}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-xs font-medium text-slate-200">{email()}</span>
+            <span class="block text-[11px] text-slate-500">ServiceOps account</span>
+          </span>
+          <button onClick={handleLogout} aria-label="Log out" title="Log out" class="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400">
+            <LogOut size={16} />
+          </button>
+        </div>
+      </div>
+    </>
+  )
+
+  const pageTitle = () => {
+    for (const section of sections) {
+      const match = section.links.find(link => link.href === location.pathname)
+      if (match) return match.label
+    }
+    return "ServiceOps"
+  }
+
+  return (
+    <div class="min-h-screen bg-slate-950 text-slate-100 lg:pl-[252px]">
+      <aside class="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-slate-800/80 bg-slate-900/95 lg:flex">
+        {sidebar()}
+      </aside>
+
+      <header class="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-slate-800/80 bg-slate-950/95 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3">
+          <button onClick={() => setMenuOpen(true)} aria-label="Open navigation" class="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 lg:hidden">
+            <Menu size={19} />
+          </button>
+          <div class="text-sm font-medium text-slate-200">{pageTitle()}</div>
+        </div>
+        <div class="hidden text-xs text-slate-500 sm:block">
+          ServiceOps workspace
+        </div>
+      </header>
+
+      <Show when={menuOpen()}>
+        <div class="fixed inset-0 z-40 lg:hidden" onClick={closeMenu} onKeyDown={event => event.key === "Escape" && closeMenu()}>
+          <div class="absolute inset-0 bg-black/60" />
+          <aside role="dialog" aria-modal="true" aria-label="Main navigation" onClick={event => event.stopPropagation()} class="relative flex h-full w-[280px] max-w-[85vw] flex-col border-r border-slate-800 bg-slate-900 shadow-2xl animate-slide-in">
+            {sidebar(true)}
           </aside>
         </div>
-      )}
+      </Show>
 
-      {/* Main content */}
-      <main class="px-3 sm:px-4 md:px-6 py-4 sm:py-6 mx-auto max-w-[1440px]">
+      <main class="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {props.children}
       </main>
     </div>

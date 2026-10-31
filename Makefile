@@ -4,6 +4,7 @@
 # MODE DETECTION
 # =============================================================
 DOCKER_CMD := $(shell command -v docker 2>/dev/null)
+DOCKER_COMPOSE_CMD := $(shell if docker compose version >/dev/null 2>&1; then printf 'docker compose'; elif command -v docker-compose >/dev/null 2>&1; then printf 'docker-compose'; fi)
 UV_CMD := $(shell command -v uv 2>/dev/null)
 NODE_CMD := $(shell command -v npm 2>/dev/null)
 
@@ -104,32 +105,33 @@ local-db-seed: ## Seed system deploy templates
 # =============================================================
 
 docker-build: ## Build Docker images
-	@if [ -z "$(DOCKER_CMD)" ]; then echo "❌ Docker not installed"; exit 1; fi
+	@if [ -z "$(DOCKER_COMPOSE_CMD)" ]; then echo "❌ Docker Compose not installed"; exit 1; fi
 	@echo "🔨 Building Docker images..."
-	docker compose build
+	$(DOCKER_COMPOSE_CMD) build
 	@echo "✅ Images built"
 
 docker-up: ## Start Docker services
-	@if [ -z "$(DOCKER_CMD)" ]; then echo "❌ Docker not installed"; exit 1; fi
+	@if [ -z "$(DOCKER_COMPOSE_CMD)" ]; then echo "❌ Docker Compose not installed"; exit 1; fi
 	@echo "🚀 Starting Docker services..."
-	docker compose up -d
+	$(DOCKER_COMPOSE_CMD) up -d --build
 	@sleep 5
 	@echo "✅ Services started:"
 	@echo "   Frontend:  http://localhost:5173"
 	@echo "   Backend:   http://localhost:9080"
-	@echo "   Database:  localhost:5432"
+	@echo "   PostgreSQL: localhost:15433"
+	@echo "   Redis:      localhost:16379"
 
 docker-down: ## Stop Docker services
 	@echo "⏹️  Stopping Docker services..."
-	docker compose down
+	$(DOCKER_COMPOSE_CMD) down
 	@echo "✅ Services stopped"
 
 docker-logs: ## View Docker logs (all services)
-	docker compose logs -f
+	$(DOCKER_COMPOSE_CMD) logs -f
 
 docker-restart: ## Restart Docker services
 	@echo "🔄 Restarting Docker services..."
-	docker compose restart
+	$(DOCKER_COMPOSE_CMD) restart
 	@echo "✅ Services restarted"
 
 # =============================================================
@@ -137,18 +139,18 @@ docker-restart: ## Restart Docker services
 # =============================================================
 
 build: ## Alias: build (auto-detect mode)
-	@if [ -n "$(DOCKER_CMD)" ]; then make docker-build; else echo "⚠️  Docker not available. Use: make local-build"; fi
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then make docker-build; else echo "⚠️  Docker Compose not available. Use: make local-build"; fi
 
 up: ## Alias: start services (auto-detect mode)
-	@if [ -n "$(DOCKER_CMD)" ]; then make docker-up; else make local-start; fi
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then make docker-up; else make local-start; fi
 
 down: ## Alias: stop services (auto-detect mode)
-	@if [ -n "$(DOCKER_CMD)" ]; then make docker-down; else make local-stop; fi
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then make docker-down; else make local-stop; fi
 
 restart: docker-restart ## Alias: restart services
 
 logs: ## View logs (Docker mode only)
-	@if [ -n "$(DOCKER_CMD)" ]; then docker compose logs -f; else echo "⚠️  Not in Docker mode — use: tail -f /tmp/serviceops-backend.log"; fi
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then $(DOCKER_COMPOSE_CMD) logs -f; else echo "⚠️  Not in Docker mode — use: tail -f /tmp/serviceops-backend.log"; fi
 
 logs-all: logs ## Alias: view all logs
 
@@ -164,8 +166,8 @@ health: ## Check service health
 
 clean: ## Clean up (remove containers, volumes, cache)
 	@echo "🗑️  Cleaning up..."
-	@if [ -n "$(DOCKER_CMD)" ]; then \
-		docker compose down -v; \
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then \
+		$(DOCKER_COMPOSE_CMD) down -v; \
 		echo "  Docker containers + volumes removed"; \
 	fi
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -179,7 +181,7 @@ db-init: local-db-init local-db-seed ## Init DB tables + seed templates (local)
 # =============================================================
 
 quick-start: ## One-command start (Docker if available, else local)
-	@if [ -n "$(DOCKER_CMD)" ]; then \
+	@if [ -n "$(DOCKER_COMPOSE_CMD)" ]; then \
 		echo "🐳 Docker detected — starting with Docker Compose..."; \
 		make docker-build && make docker-up; \
 	else \

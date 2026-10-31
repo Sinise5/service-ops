@@ -1,122 +1,132 @@
-# ServiceOps Platform
+# ServiceOps
 
-**Observability, CMDB & Docker Management** — Datadog/New Relic alternative.
+ServiceOps adalah aplikasi operasi infrastruktur untuk mengelola inventaris aset (CMDB), menjalankan pemeriksaan monitoring, mengatur alert dan incident, melihat log, melacak SLA, serta mengelola Docker di host jarak jauh melalui SSH.
 
-**Version:** 1.1.0 · **Branch:** `feature/docker-management` · **Updated:** July 2026
+Frontend menggunakan SolidJS dan Vite. Backend menggunakan Python, Robyn, PostgreSQL, dan Redis.
 
----
+## Fitur
 
-## Quick Start
+| Area | Fungsi |
+| --- | --- |
+| Dashboard | Ringkasan jumlah aset, check monitoring, aturan alert, dan incident |
+| Assets | CRUD aset dan tipe aset untuk inventaris CMDB |
+| Monitoring | HTTP dan Ping check terjadwal dari UI; backend juga memiliki plugin SSL, tetapi form UI SSL belum lengkap |
+| Alerts & Incidents | Aturan alert, siklus incident, komentar, dan notifikasi |
+| Notifications | Kanal Telegram, Discord, Email, dan Webhook |
+| SLA | Target uptime, ringkasan, dan laporan |
+| Topology | Relasi dependensi antar aset dan analisis dampak |
+| Logs | Pencarian dan statistik log |
+| Docker | Host SSH, container, image, volume, Compose, deploy, dan monitor host |
+| Settings & Help | Profil, API key, panduan aplikasi |
+
+> Integrasi eksternal seperti notifikasi dan host Docker memerlukan konfigurasi kredensial masing-masing. Fitur yang terlihat di UI tidak berarti sudah terhubung ke layanan eksternal.
+
+## Persyaratan
+
+- Docker Engine dengan Docker Compose, atau Docker Engine dengan executable `docker-compose`
+- Git
+- Untuk pengembangan tanpa container aplikasi: Python 3.11+, [uv](https://docs.astral.sh/uv/), dan Node.js 20+
+
+## Mulai dengan Docker
+
+Clone repository dan jalankan seluruh stack:
 
 ```bash
-git clone https://gitlab.com/QTI/QTI-Research/service-ops.git
-cd serviceops
-docker compose up -d postgres redis          # start DBs
-cd backend && uv sync && uv run python -m src.main &  # backend → :9080
-cd ../frontend && npm install && npm run dev  # frontend → :5173
+git clone https://github.com/Sinise5/service-ops.git
+cd service-ops
+cp .env.example .env
+docker-compose up -d --build
 ```
 
-**Login:** `admin@serviceops.local` / `admin123`
+Jika instalasi Docker Anda memiliki plugin Compose, gunakan `docker compose` sebagai pengganti `docker-compose`.
 
----
+Alamat lokal:
 
-## Features
+| Layanan | Alamat |
+| --- | --- |
+| Aplikasi | http://localhost:5173 |
+| Backend API | http://localhost:9080 |
+| Health check | http://localhost:9080/health |
+| PostgreSQL dari host | `localhost:15433` |
+| Redis dari host | `localhost:16379` |
 
-| Feature | Status | Docs |
-|---------|--------|------|
-| **Docker Management** — containers, images, volumes, Compose via SSH | ✅ | [`DOCKER_MANAGEMENT_GUIDE.md`](./docs/DOCKER_MANAGEMENT_GUIDE.md) |
-| **Host Monitoring** — CPU, MEM, disk, top processes, docker df | ✅ | Built-in tab per host |
-| **Alert Thresholds** — per-host CPU/MEM/Disk rules + Telegram/Email notif | ✅ | New in Phase 15 |
-| **Asset Registry (CMDB)** — types, tags, relationships, CSV import | ✅ | |
-| **Monitoring Engine** — HTTP, Ping, SSL, TCP, DNS plugins | ✅ | |
-| **Auth & RBAC** — JWT + roles + permissions | ✅ | |
-| **Notifications** — Telegram, Email, Discord, Webhook | ✅ | |
-| **SLA & Uptime** — tracking, reports, incident correlation | ✅ | |
-| **Topology** — dependency graph, impact analysis | ✅ | |
+Database disiapkan oleh `init.sql` dan `seed.sql`; service `migrate` kemudian menerapkan tabel tambahan dari `docker-migration.sql`. Login seed untuk pengembangan: `admin@serviceops.local` / `admin123`. Jangan gunakan kredensial atau secret contoh untuk deployment.
 
----
+Perintah umum:
 
-## Documentation
-
-| Document | Covers |
-|----------|--------|
-| [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System architecture, domain modules, data flow |
-| [`PROJECT_STATUS.md`](./docs/PROJECT_STATUS.md) | All features, DB schema, API stats, host inventory |
-| [`ROADMAP.md`](./docs/ROADMAP.md) | Development phases, timeline, planned features |
-| [`DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | Docker deploy, env vars, migration, troubleshooting |
-| [`DOCKER_MANAGEMENT_GUIDE.md`](./docs/DOCKER_MANAGEMENT_GUIDE.md) | Docker host/container/image/volume/compose guide |
-| [`USER_GUIDE.md`](./docs/USER_GUIDE.md) | User-facing operations for non-admin |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Release history |
-
----
-
-## Tech Stack
-
-| Layer | Stack | Version |
-|-------|-------|---------|
-| Backend | Python + Robyn | 0.88.0 |
-| Database | PostgreSQL + psycopg v3 | 16 |
-| Cache | Redis | 7 |
-| SSH | asyncssh | 2.14+ |
-| Frontend | SolidJS + Tailwind | 1.8+ / 3 |
-| Encryption | cryptography (Fernet AES-128) | — |
-
----
-
-## Project Structure
-
-```
-serviceops/
-├── backend/
-│   ├── src/
-│   │   ├── main.py              # App entry + router
-│   │   ├── database.py           # psycopg async pool
-│   │   ├── config.py             # Env config
-│   │   ├── shared.py             # json_response, get_header
-│   │   ├── utils.py              # UUIDEncoder, json_response
-│   │   ├── domains/
-│   │   │   ├── auth/             # JWT, bcrypt, RBAC
-│   │   │   ├── assets/           # CMDB
-│   │   │   ├── monitoring/       # Check plugins + scheduler
-│   │   │   ├── alerts/           # Alert rules, incidents
-│   │   │   ├── notifications/    # Telegram/Email/Discord
-│   │   │   ├── docker/           # SSH-host management ⭐
-│   │   │   ├── logs/             # Log aggregation
-│   │   │   ├── sla/              # Uptime tracking
-│   │   │   ├── topology/         # Dependency graph
-│   │   │   └── audit/            # Audit trail
-│   │   └── migrations/           # Incremental SQL
-│   ├── .venv/
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── components/docker/    # Docker page components ⭐
-│       │   └── HostMonitor.tsx   # Alert thresholds + monitor
-│       └── pages/
-├── docs/                         # 📚 All documentation
-├── docker-compose.yml            # Production orchestration
-├── Dockerfile.backend
-├── Dockerfile.frontend
-├── init.sql                      # Full schema (fresh DB)
-└── docker-migration.sql          # Incremental DDL
+```bash
+docker-compose ps
+docker-compose logs -f backend
+docker-compose logs -f migrate
+docker-compose down
 ```
 
----
+`docker-compose down` mempertahankan volume database. Hindari `down -v` kecuali memang ingin menghapus seluruh data lokal.
 
-## Branch Status
+## Pengembangan lokal
 
-```
-feature/docker-management ── 11 commits ahead of main
-  ├── CORS fix (c66318f)
-  ├── Alert tables in migration (573b884)
-  ├── HostMonitor + alert CRUD (f0b5768)
-  └── ... 8 more commits
+Jalankan PostgreSQL dan Redis melalui Compose:
 
-Next Step: Merge → main, deploy to production (10.10.10.201)
+```bash
+cp .env.example .env
+docker-compose up -d --build postgres redis
+docker-compose run --build --rm migrate
 ```
 
----
+Siapkan backend di terminal pertama:
 
-## License
+```bash
+cp backend/.env.example backend/.env
+cd backend
+uv sync
+uv run python run_server.py
+```
 
-Proprietary — QTI Internal Project
+Siapkan frontend di terminal kedua:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Buka http://localhost:5173. Vite meneruskan API melalui `/api`; backend tersedia di port 9080. Jika port lokal telah dipakai, ubah port host di `.env` dan sesuaikan `DATABASE_URL` dalam `backend/.env`.
+
+## Perintah pengembangan
+
+```bash
+cd frontend
+npm run dev       # server UI
+npm run build     # build produksi
+```
+
+```bash
+cd backend
+uv sync           # pasang dependensi
+uv run python run_server.py
+```
+
+`make help` menampilkan target Makefile. Target `make local-test` memerlukan test suite backend.
+
+## Dokumentasi
+
+Mulai dari [indeks dokumentasi](docs/README.md). Panduan utama:
+
+- [Instalasi, konfigurasi, Docker, dan troubleshooting](docs/DEPLOYMENT.md)
+- [Panduan penggunaan](docs/USER_GUIDE.md)
+- [Arsitektur](docs/ARCHITECTURE.md)
+- [Status proyek](docs/PROJECT_STATUS.md)
+- [Monitoring](MONITORING_GUIDE.md)
+- [Alert rules](ALERT_RULES_GUIDE.md)
+- [Docker jarak jauh](docs/DOCKER_MANAGEMENT_GUIDE.md)
+
+## Catatan konfigurasi
+
+- `.env` pada root mengatur nilai Compose. Gunakan `.env.example` sebagai templat lokal.
+- `backend/.env` hanya dibutuhkan jika menjalankan backend langsung di mesin host; templatnya tersedia di `backend/.env.example`.
+- `.env` dan file lokal lain diabaikan Git. Jangan commit secret, key SSH, atau kredensial layanan.
+- Compose saat ini ditujukan untuk pengembangan lokal. Tambahkan secret manager, TLS/reverse proxy, backup, dan hardening sebelum penggunaan production.
+
+## Lisensi
+
+Proprietary — QTI Internal Project.

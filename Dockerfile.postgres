@@ -1,0 +1,5 @@
+FROM postgres:16-alpine
+
+COPY --chmod=0644 init.sql /docker-entrypoint-initdb.d/01-init.sql
+COPY --chmod=0644 seed.sql /docker-entrypoint-initdb.d/02-seed.sql
+COPY --chmod=0644 docker-migration.sql /docker-migration.sql

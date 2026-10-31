@@ -1,5 +1,7 @@
 # ServiceOps Docker Management — Design Document
 
+> **Arsip desain (30 Juni 2026):** implementasi sekarang dapat berbeda dari proposal ini. Untuk penggunaan, lihat [Docker Management Guide](DOCKER_MANAGEMENT_GUIDE.md); untuk status source aktif, lihat [Project Status](PROJECT_STATUS.md).
+
 **Author:** Hermes Agent  
 **Date:** 2026-06-30  
 **Status:** Approved — Ready for Implementation
