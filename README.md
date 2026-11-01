@@ -23,6 +23,12 @@ Frontend menggunakan SolidJS dan Vite. Backend menggunakan Python, Robyn, Postgr
 
 > Integrasi eksternal seperti notifikasi dan host Docker memerlukan konfigurasi kredensial masing-masing. Fitur yang terlihat di UI tidak berarti sudah terhubung ke layanan eksternal.
 
+### Contoh tampilan CVE Feed
+
+![Contoh tampilan halaman CVE Feed ServiceOps](docs/images/cve-feed-sample.svg)
+
+Gambar di atas adalah ilustrasi tampilan dengan data contoh. Jumlah dan detail CVE pada aplikasi mengikuti hasil sinkronisasi NVD dan CISA KEV.
+
 ## Persyaratan
 
 - Docker Engine dengan Docker Compose, atau Docker Engine dengan executable `docker-compose`
